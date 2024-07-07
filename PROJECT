@@ -7,4 +7,14 @@ layout:
 - go.kubebuilder.io/v4
 projectName: spot-terminator
 repo: github.com/int128/spot-terminator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: int128.github.io
+  group: spotterminator
+  kind: SQS
+  path: github.com/int128/spot-terminator/api/v1
+  version: v1
 version: "3"

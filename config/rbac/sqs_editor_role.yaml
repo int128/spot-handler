@@ -1,0 +1,27 @@
+# permissions for end users to edit sqs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: spot-terminator
+    app.kubernetes.io/managed-by: kustomize
+  name: sqs-editor-role
+rules:
+- apiGroups:
+  - spotterminator.int128.github.io
+  resources:
+  - sqs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - spotterminator.int128.github.io
+  resources:
+  - sqs/status
+  verbs:
+  - get
