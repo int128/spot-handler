@@ -2,7 +2,7 @@ apiVersion: spotterminator.int128.github.io/v1
 kind: SQS
 metadata:
   labels:
-    app.kubernetes.io/name: spot-terminator
+    app.kubernetes.io/name: spot-handler
     app.kubernetes.io/managed-by: kustomize
   name: sqs-sample
 spec:

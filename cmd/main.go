@@ -38,8 +38,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	spotterminatorv1 "github.com/int128/spot-terminator/api/v1"
-	"github.com/int128/spot-terminator/internal/controller"
+	spotterminatorv1 "github.com/int128/spot-handler/api/v1"
+	"github.com/int128/spot-handler/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 

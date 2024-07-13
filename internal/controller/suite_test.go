@@ -32,7 +32,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	spotterminatorv1 "github.com/int128/spot-terminator/api/v1"
+	spotterminatorv1 "github.com/int128/spot-handler/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 

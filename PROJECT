@@ -5,8 +5,8 @@
 domain: int128.github.io
 layout:
 - go.kubebuilder.io/v4
-projectName: spot-terminator
-repo: github.com/int128/spot-terminator
+projectName: spot-handler
+repo: github.com/int128/spot-handler
 resources:
 - api:
     crdVersion: v1
@@ -15,6 +15,6 @@ resources:
   domain: int128.github.io
   group: spotterminator
   kind: SQS
-  path: github.com/int128/spot-terminator/api/v1
+  path: github.com/int128/spot-handler/api/v1
   version: v1
 version: "3"

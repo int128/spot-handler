@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	spotterminatorv1 "github.com/int128/spot-terminator/api/v1"
+	spotterminatorv1 "github.com/int128/spot-handler/api/v1"
 )
 
 var _ = Describe("SQS Controller", func() {

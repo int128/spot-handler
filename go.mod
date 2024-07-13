@@ -1,4 +1,4 @@
-module github.com/int128/spot-terminator
+module github.com/int128/spot-handler
 
 go 1.22.0
 

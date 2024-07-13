@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	spotterminatorv1 "github.com/int128/spot-terminator/api/v1"
+	spotterminatorv1 "github.com/int128/spot-handler/api/v1"
 )
 
 // SQSReconciler reconciles a SQS object
