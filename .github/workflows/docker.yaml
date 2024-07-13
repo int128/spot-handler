@@ -27,6 +27,9 @@ on:
 jobs:
   build:
     uses: int128/docker-build-workflow/.github/workflows/build.yaml@c355cd620f7e7bfb34f7ee37cb3adcd3aded8b6c # v1
+    permissions:
+      contents: read
+      packages: write
     with:
       platforms: linux/amd64,linux/arm64
 
