@@ -1,0 +1,27 @@
+name: go
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/go.yaml
+      - go.*
+      - '**/*.go'
+      - Makefile
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/go.yaml
+      - go.*
+      - '**/*.go'
+      - Makefile
+
+jobs:
+  go:
+    uses: int128/kubebuilder-workflows/.github/workflows/go.yaml@96546ff45434040af88e8a5280e49609d4796ff4 # v1
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      go-version: 1.22.5
+      golangci-lint-version: v1.59.1
