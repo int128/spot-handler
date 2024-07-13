@@ -1,0 +1,27 @@
+name: release
+
+on:
+  push:
+    tags:
+      - v*
+  pull_request:
+    paths:
+      - config/**
+      - .github/workflows/release.yaml
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - run: kustomize edit set image controller='ghcr.io/${{ github.repository }}:${{ github.ref_name }}'
+        working-directory: config/manager
+      - run: kustomize build config/default > /tmp/spot-handler.yaml
+      - run: cat /tmp/spot-handler.yaml
+
+      - if: github.ref_type == 'tag'
+        run: gh release upload '${{ github.ref_name }}' /tmp/spot-handler.yaml --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
