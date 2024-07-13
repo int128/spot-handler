@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -69,8 +70,9 @@ var _ = Describe("SQS Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &SQSReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				Client:    k8sClient,
+				Scheme:    k8sClient.Scheme(),
+				SQSClient: &dummySQS{},
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
@@ -82,3 +84,13 @@ var _ = Describe("SQS Controller", func() {
 		})
 	})
 })
+
+type dummySQS struct{}
+
+func (s *dummySQS) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error) {
+	return &sqs.ReceiveMessageOutput{}, nil
+}
+
+func (s *dummySQS) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput, optFns ...func(options *sqs.Options)) (*sqs.DeleteMessageOutput, error) {
+	return &sqs.DeleteMessageOutput{}, nil
+}
