@@ -4,6 +4,18 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
+- resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - spothandler.int128.github.io
   resources:
