@@ -43,7 +43,7 @@ type SQSReconciler struct {
 	client.Client
 	Scheme    *runtime.Scheme
 	Recorder  record.EventRecorder
-	SQSClient *sqs.Client
+	SQSClient SQSClient
 }
 
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqs,verbs=get;list;watch;create;update;patch;delete
