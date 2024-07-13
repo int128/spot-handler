@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: sqses.spotterminator.int128.github.io
+  name: sqses.spothandler.int128.github.io
 spec:
-  group: spotterminator.int128.github.io
+  group: spothandler.int128.github.io
   names:
     kind: SQS
     listKind: SQSList

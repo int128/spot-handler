@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	spotterminatorv1 "github.com/int128/spot-handler/api/v1"
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
 // SQSReconciler reconciles a SQS object
@@ -46,9 +46,9 @@ type SQSReconciler struct {
 	SQSClient *sqs.Client
 }
 
-// +kubebuilder:rbac:groups=spotterminator.int128.github.io,resources=sqs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=spotterminator.int128.github.io,resources=sqs/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=spotterminator.int128.github.io,resources=sqs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqs/finalizers,verbs=update
 // +kubebuilder:rbac:groups=,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=,resources=pods,verbs=get;list;watch
 
@@ -57,7 +57,7 @@ type SQSReconciler struct {
 func (r *SQSReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var sqsObj spotterminatorv1.SQS
+	var sqsObj spothandlerv1.SQS
 	if err := r.Get(ctx, req.NamespacedName, &sqsObj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -154,6 +154,6 @@ func (r *SQSReconciler) processNotice(ctx context.Context, notice EC2SpotInstanc
 // SetupWithManager sets up the controller with the Manager.
 func (r *SQSReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&spotterminatorv1.SQS{}).
+		For(&spothandlerv1.SQS{}).
 		Complete(r)
 }

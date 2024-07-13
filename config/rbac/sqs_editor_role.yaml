@@ -8,7 +8,7 @@ metadata:
   name: sqs-editor-role
 rules:
 - apiGroups:
-  - spotterminator.int128.github.io
+  - spothandler.int128.github.io
   resources:
   - sqs
   verbs:
@@ -20,7 +20,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - spotterminator.int128.github.io
+  - spothandler.int128.github.io
   resources:
   - sqs/status
   verbs:

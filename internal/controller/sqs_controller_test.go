@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	spotterminatorv1 "github.com/int128/spot-handler/api/v1"
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
 var _ = Describe("SQS Controller", func() {
@@ -40,13 +40,13 @@ var _ = Describe("SQS Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		sqs := &spotterminatorv1.SQS{}
+		sqs := &spothandlerv1.SQS{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind SQS")
 			err := k8sClient.Get(ctx, typeNamespacedName, sqs)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &spotterminatorv1.SQS{
+				resource := &spothandlerv1.SQS{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,7 +59,7 @@ var _ = Describe("SQS Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &spotterminatorv1.SQS{}
+			resource := &spothandlerv1.SQS{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

@@ -8,7 +8,7 @@ metadata:
   name: sqs-viewer-role
 rules:
 - apiGroups:
-  - spotterminator.int128.github.io
+  - spothandler.int128.github.io
   resources:
   - sqs
   verbs:
@@ -16,7 +16,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - spotterminator.int128.github.io
+  - spothandler.int128.github.io
   resources:
   - sqs/status
   verbs:

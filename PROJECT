@@ -13,7 +13,7 @@ resources:
     namespaced: true
   controller: true
   domain: int128.github.io
-  group: spotterminator
+  group: spothandler
   kind: SQS
   path: github.com/int128/spot-handler/api/v1
   version: v1

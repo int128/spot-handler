@@ -1,4 +1,4 @@
-apiVersion: spotterminator.int128.github.io/v1
+apiVersion: spothandler.int128.github.io/v1
 kind: SQS
 metadata:
   labels:

@@ -38,7 +38,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	spotterminatorv1 "github.com/int128/spot-handler/api/v1"
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 	"github.com/int128/spot-handler/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
@@ -51,7 +51,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(spotterminatorv1.AddToScheme(scheme))
+	utilruntime.Must(spothandlerv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
