@@ -19,78 +19,59 @@ package controller
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
 var _ = Describe("SQS Controller", func() {
 	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
+		ctx := context.TODO()
 
-		ctx := context.Background()
-
-		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
-		}
-		sqs := &spothandlerv1.SQS{}
-
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind SQS")
-			err := k8sClient.Get(ctx, typeNamespacedName, sqs)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &spothandlerv1.SQS{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
-					},
-					// TODO(user): Specify other spec details if needed.
-				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
-			}
-		})
-
-		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &spothandlerv1.SQS{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Cleanup the specific resource instance SQS")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
 		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-			controllerReconciler := &SQSReconciler{
-				Client:    k8sClient,
-				Scheme:    k8sClient.Scheme(),
-				SQSClient: &dummySQS{},
-			}
+			By("Creating a Node")
+			Expect(k8sClient.Create(ctx, &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-node",
+				},
+				Spec: corev1.NodeSpec{
+					ProviderID: "aws:///us-east-2a/i-1234567890abcdef0",
+				},
+			})).To(Succeed())
 
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+			By("Creating a Pod")
+			Expect(k8sClient.Create(ctx, &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-pod",
+					Namespace: "default",
+				},
+				Spec: corev1.PodSpec{
+					NodeName: "test-node",
+					Containers: []corev1.Container{
+						{
+							Name:  "test-container",
+							Image: "test-image",
+						},
+					},
+				},
+			})).To(Succeed())
+
+			By("Creating a SQS resource")
+			Expect(k8sClient.Create(ctx, &spothandlerv1.SQS{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-sqs",
+					Namespace: "default",
+				},
+				Spec: spothandlerv1.SQSSpec{
+					QueueURL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
+				},
+			})).To(Succeed())
+
+			By("Reconciling the created resource")
+			//time.Sleep(1 * time.Second)
+			//Expect(false).To(BeTrue())
 		})
 	})
 })
-
-type dummySQS struct{}
-
-func (s *dummySQS) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error) {
-	return &sqs.ReceiveMessageOutput{}, nil
-}
-
-func (s *dummySQS) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput, optFns ...func(options *sqs.Options)) (*sqs.DeleteMessageOutput, error) {
-	return &sqs.DeleteMessageOutput{}, nil
-}

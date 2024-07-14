@@ -18,17 +18,15 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/int128/spot-handler/internal/spot"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,6 +34,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
+)
+
+const (
+	nodeProviderIDField = ".spec.providerID"
+	podNodeNameField    = ".spec.nodeName"
 )
 
 // SQSReconciler reconciles a SQS object
@@ -70,80 +73,71 @@ func (r *SQSReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if len(receiveMessageOutput.Messages) == 0 {
+	messages := receiveMessageOutput.Messages
+	if len(messages) == 0 {
 		return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, nil
 	}
-	logger.Info("Received message", "count", len(receiveMessageOutput.Messages))
+	logger.Info("Received message", "count", len(messages))
 
-	var errs []error
-	for _, message := range receiveMessageOutput.Messages {
-		if err := r.processMessage(ctx, message); err != nil {
-			errs = append(errs, err)
-		}
-		if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
-			QueueUrl:      aws.String(sqsObj.Spec.QueueURL),
-			ReceiptHandle: message.ReceiptHandle,
-		}); err != nil {
-			errs = append(errs, err)
-		}
+	var wg sync.WaitGroup
+	errs := make([]error, len(messages))
+	for i, message := range messages {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			notice, err := spot.Parse(aws.ToString(message.Body))
+			if err != nil {
+				logger.Error(err, "Dropped the invalid message", "body", aws.ToString(message.Body))
+				return
+			}
+			if err := r.processNotice(ctx, notice); err != nil {
+				errs[i] = err
+				return
+			}
+			if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
+				QueueUrl:      aws.String(sqsObj.Spec.QueueURL),
+				ReceiptHandle: message.ReceiptHandle,
+			}); err != nil {
+				errs[i] = err
+				return
+			}
+		}()
 	}
-	if err := errors.Join(errs...); err != nil {
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, nil
+	return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, errors.Join(errs...)
 }
 
-type EC2SpotInstanceInterruptionNotice struct {
-	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
-	Region string                                  `json:"region,omitempty"`
-	Detail EC2SpotInstanceInterruptionNoticeDetail `json:"detail,omitempty"`
-}
-
-type EC2SpotInstanceInterruptionNoticeDetail struct {
-	InstanceID     string `json:"instance-id,omitempty"`
-	InstanceAction string `json:"instance-action,omitempty"`
-}
-
-func (r *SQSReconciler) processMessage(ctx context.Context, message sqstypes.Message) error {
-	body := aws.ToString(message.Body)
-	var notice = EC2SpotInstanceInterruptionNotice{}
-	if err := json.NewDecoder(strings.NewReader(body)).Decode(&notice); err != nil {
-		return fmt.Errorf("invalid json: %w", err)
-	}
-	if notice.Detail.InstanceAction != "terminate" {
-		return nil
-	}
-	return r.processNotice(ctx, notice)
-}
-
-func (r *SQSReconciler) processNotice(ctx context.Context, notice EC2SpotInstanceInterruptionNotice) error {
-	// https://repost.aws/knowledge-center/eks-terminated-node-instance-id
-	nodeProviderID := fmt.Sprintf("aws:///%s/%s", notice.Region, notice.Detail.InstanceID)
+func (r *SQSReconciler) processNotice(ctx context.Context, notice spot.Notice) error {
+	nodeProviderID := fmt.Sprintf("aws:///%s/%s", notice.AvailabilityZone, notice.Detail.InstanceID)
 
 	var nodeList corev1.NodeList
-	if err := r.List(ctx, &nodeList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.providerID", nodeProviderID),
-	}); err != nil {
+	if err := r.List(ctx, &nodeList, client.MatchingFields{nodeProviderIDField: nodeProviderID}); err != nil {
 		return fmt.Errorf("could not list nodes: %w", err)
 	}
 	if len(nodeList.Items) == 0 {
 		return nil
 	}
 	node := nodeList.Items[0]
+	r.Recorder.AnnotatedEventf(&node,
+		map[string]string{
+			"host": notice.Detail.InstanceID,
+		},
+		corev1.EventTypeWarning, "SpotInterrupted",
+		"Instance %s is spot interrupted", notice.Detail.InstanceID)
 
 	var podList corev1.PodList
-	if err := r.List(ctx, &podList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.nodeName", node.Name),
-	}); err != nil {
+	if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
 		return fmt.Errorf("could not list pods: %w", err)
 	}
 	if len(podList.Items) == 0 {
 		return nil
 	}
-
 	for _, pod := range podList.Items {
-		r.Recorder.Eventf(&pod, corev1.EventTypeWarning, "SpotInterrupted",
-			"Pod %s is interrupted", pod.Name)
+		r.Recorder.AnnotatedEventf(&pod,
+			map[string]string{
+				"host": notice.Detail.InstanceID,
+			},
+			corev1.EventTypeWarning, "SpotInterrupted",
+			"Instance %s is spot interrupted", notice.Detail.InstanceID)
 		//if err := r.Delete(ctx, &pod); err != nil {
 		//	return err
 		//}
@@ -153,6 +147,30 @@ func (r *SQSReconciler) processNotice(ctx context.Context, notice EC2SpotInstanc
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SQSReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, nodeProviderIDField,
+		func(obj client.Object) []string {
+			node := obj.(*corev1.Node)
+			if node.Spec.ProviderID == "" {
+				return nil
+			}
+			return []string{node.Spec.ProviderID}
+		},
+	); err != nil {
+		return fmt.Errorf("could not create an index for field %s: %w", nodeProviderIDField, err)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, podNodeNameField,
+		func(obj client.Object) []string {
+			pod := obj.(*corev1.Pod)
+			if pod.Spec.NodeName == "" {
+				return nil
+			}
+			return []string{pod.Spec.NodeName}
+		},
+	); err != nil {
+		return fmt.Errorf("could not create an index for field %s: %w", podNodeNameField, err)
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&spothandlerv1.SQS{}).
 		Complete(r)
