@@ -18,7 +18,7 @@ on:
 
 jobs:
   go:
-    uses: int128/kubebuilder-workflows/.github/workflows/go.yaml@96546ff45434040af88e8a5280e49609d4796ff4 # v1
+    uses: int128/kubebuilder-workflows/.github/workflows/go.yaml@002004566118fc7d9d2db2428a5a546e2f52120a # v1
     permissions:
       contents: write
       pull-requests: write
