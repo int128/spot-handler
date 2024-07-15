@@ -145,7 +145,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.EC2SpotInstanceInterruptionWarningReconciler{
+	if err = (&controller.SpotInterruptionReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),

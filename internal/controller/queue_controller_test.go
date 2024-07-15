@@ -35,7 +35,7 @@ var _ = Describe("Queue Controller", func() {
 		ctx := context.TODO()
 
 		It("should successfully reconcile the resource", func() {
-			By("Creating a Queue resource")
+			By("Creating a Queue object")
 			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-queue",
@@ -65,16 +65,16 @@ var _ = Describe("Queue Controller", func() {
 }`),
 			})
 
-			var ec2SpotInstanceInterruptionWarning spothandlerv1.EC2SpotInstanceInterruptionWarning
+			var spotInterruption spothandlerv1.SpotInterruption
 			Eventually(func() error {
 				return k8sClient.Get(ctx,
-					ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &ec2SpotInstanceInterruptionWarning)
+					ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &spotInterruption)
 			}).Should(Succeed())
 
-			Expect(ec2SpotInstanceInterruptionWarning.Spec.EventTime.UTC()).To(Equal(
+			Expect(spotInterruption.Spec.EventTime.UTC()).To(Equal(
 				time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
-			Expect(ec2SpotInstanceInterruptionWarning.Spec.InstanceID).To(Equal("i-1234567890abcdef0"))
-			Expect(ec2SpotInstanceInterruptionWarning.Spec.AvailabilityZone).To(Equal("us-east-2a"))
+			Expect(spotInterruption.Spec.InstanceID).To(Equal("i-1234567890abcdef0"))
+			Expect(spotInterruption.Spec.AvailabilityZone).To(Equal("us-east-2a"))
 
 			Expect(mockSQSClient.messages).To(BeEmpty())
 		})

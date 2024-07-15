@@ -25,7 +25,7 @@ type rawMessageDetail struct {
 	InstanceAction string `json:"instance-action,omitempty"`
 }
 
-func Parse(body string) (*spothandlerv1.EC2SpotInstanceInterruptionWarningSpec, error) {
+func Parse(body string) (*spothandlerv1.SpotInterruptionSpec, error) {
 	var msg rawMessage
 	if err := json.NewDecoder(strings.NewReader(body)).Decode(&msg); err != nil {
 		return nil, fmt.Errorf("invalid json: %w", err)
@@ -41,7 +41,7 @@ func Parse(body string) (*spothandlerv1.EC2SpotInstanceInterruptionWarningSpec, 
 		return nil, fmt.Errorf("could not parse the availability zone: %w", err)
 	}
 
-	return &spothandlerv1.EC2SpotInstanceInterruptionWarningSpec{
+	return &spothandlerv1.SpotInterruptionSpec{
 		EventTime:        metav1.NewTime(msg.Time),
 		InstanceID:       msg.Detail.InstanceID,
 		AvailabilityZone: availabilityZone,

@@ -23,32 +23,6 @@ rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
-  - ec2spotinstanceinterruptionwarnings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - ec2spotinstanceinterruptionwarnings/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - ec2spotinstanceinterruptionwarnings/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
   - queues
   verbs:
   - create
@@ -68,6 +42,32 @@ rules:
   - spothandler.int128.github.io
   resources:
   - queues/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptions/status
   verbs:
   - get
   - patch
