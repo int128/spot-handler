@@ -49,9 +49,9 @@ type SQSReconciler struct {
 	SQSClient SQSClient
 }
 
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqs/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqses/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqses/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
