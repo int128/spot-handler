@@ -19,14 +19,14 @@ package controller
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/int128/spot-handler/internal/spot"
-	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,11 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
-)
-
-const (
-	nodeProviderIDField = ".spec.providerID"
-	podNodeNameField    = ".spec.nodeName"
 )
 
 // QueueReconciler reconciles a Queue object
@@ -52,9 +47,6 @@ type QueueReconciler struct {
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=queues,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=queues/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=queues/finalizers,verbs=update
-
-// +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -84,14 +76,24 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	errs := make([]error, len(messages))
 	for i, message := range messages {
 		wg.Add(1)
-		go func() {
+		go func(i int, message sqstypes.Message) {
 			defer wg.Done()
-			notice, err := spot.Parse(aws.ToString(message.Body))
+			spec, err := spot.Parse(aws.ToString(message.Body))
 			if err != nil {
-				logger.Error(err, "Dropped the invalid message", "body", aws.ToString(message.Body))
+				logger.Info("Dropped an invalid message", "error", err, "body", aws.ToString(message.Body))
 				return
 			}
-			if err := r.processNotice(ctx, notice); err != nil {
+			ec2SpotInstanceInterruptionWarning := spothandlerv1.EC2SpotInstanceInterruptionWarning{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: spec.InstanceID,
+				},
+				Spec: *spec,
+			}
+			if err := ctrl.SetControllerReference(&queueObj, &ec2SpotInstanceInterruptionWarning, r.Scheme); err != nil {
+				errs[i] = err
+				return
+			}
+			if err := r.Client.Create(ctx, &ec2SpotInstanceInterruptionWarning); err != nil {
 				errs[i] = err
 				return
 			}
@@ -102,76 +104,13 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				errs[i] = err
 				return
 			}
-		}()
+		}(i, message)
 	}
 	return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, errors.Join(errs...)
 }
 
-func (r *QueueReconciler) processNotice(ctx context.Context, notice spot.Notice) error {
-	nodeProviderID := fmt.Sprintf("aws:///%s/%s", notice.AvailabilityZone, notice.Detail.InstanceID)
-
-	var nodeList corev1.NodeList
-	if err := r.List(ctx, &nodeList, client.MatchingFields{nodeProviderIDField: nodeProviderID}); err != nil {
-		return fmt.Errorf("could not list nodes: %w", err)
-	}
-	if len(nodeList.Items) == 0 {
-		return nil
-	}
-	node := nodeList.Items[0]
-	r.Recorder.AnnotatedEventf(&node,
-		map[string]string{
-			"host": notice.Detail.InstanceID,
-		},
-		corev1.EventTypeWarning, "SpotInterrupted",
-		"Instance %s is spot interrupted", notice.Detail.InstanceID)
-
-	var podList corev1.PodList
-	if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
-		return fmt.Errorf("could not list pods: %w", err)
-	}
-	if len(podList.Items) == 0 {
-		return nil
-	}
-	for _, pod := range podList.Items {
-		r.Recorder.AnnotatedEventf(&pod,
-			map[string]string{
-				"host": notice.Detail.InstanceID,
-			},
-			corev1.EventTypeWarning, "SpotInterrupted",
-			"Instance %s is spot interrupted", notice.Detail.InstanceID)
-		//if err := r.Delete(ctx, &pod); err != nil {
-		//	return err
-		//}
-	}
-	return nil
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *QueueReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, nodeProviderIDField,
-		func(obj client.Object) []string {
-			node := obj.(*corev1.Node)
-			if node.Spec.ProviderID == "" {
-				return nil
-			}
-			return []string{node.Spec.ProviderID}
-		},
-	); err != nil {
-		return fmt.Errorf("could not create an index for field %s: %w", nodeProviderIDField, err)
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, podNodeNameField,
-		func(obj client.Object) []string {
-			pod := obj.(*corev1.Pod)
-			if pod.Spec.NodeName == "" {
-				return nil
-			}
-			return []string{pod.Spec.NodeName}
-		},
-	); err != nil {
-		return fmt.Errorf("could not create an index for field %s: %w", podNodeNameField, err)
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&spothandlerv1.Queue{}).
 		Complete(r)
