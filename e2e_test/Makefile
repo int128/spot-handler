@@ -1,4 +1,4 @@
-PROJECT_NAME := kubebuilder-updates
+PROJECT_NAME := spot-handler
 CLUSTER_NAME := $(PROJECT_NAME)-e2e
 KUBECONFIG := output/kubeconfig.yaml
 export KUBECONFIG
