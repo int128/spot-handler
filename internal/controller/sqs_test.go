@@ -20,7 +20,7 @@ func (s *sqsMock) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessage
     "detail-type": "EC2 Spot Instance Interruption Warning",
     "source": "aws.ec2",
     "account": "123456789012",
-    "time": "yyyy-mm-ddThh:mm:ssZ",
+    "time": "2021-02-03T14:05:06Z",
     "region": "us-east-2",
     "resources": ["arn:aws:ec2:us-east-2a:instance/i-1234567890abcdef0"],
     "detail": {

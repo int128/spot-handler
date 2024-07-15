@@ -2,8 +2,11 @@ package spot
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestParse(t *testing.T) {
@@ -15,7 +18,7 @@ func TestParse(t *testing.T) {
     "detail-type": "EC2 Spot Instance Interruption Warning",
     "source": "aws.ec2",
     "account": "123456789012",
-    "time": "yyyy-mm-ddThh:mm:ssZ",
+    "time": "2021-02-03T14:05:06Z",
     "region": "us-east-2",
     "resources": ["arn:aws:ec2:us-east-2a:instance/i-1234567890abcdef0"],
     "detail": {
@@ -27,13 +30,9 @@ func TestParse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Parse() error: %s", err)
 		}
-		want := Notice{
-			Resources:  []string{"arn:aws:ec2:us-east-2a:instance/i-1234567890abcdef0"},
-			DetailType: DetailTypeEC2SpotInstanceInterruptionWarning,
-			Detail: NoticeDetail{
-				InstanceID:     "i-1234567890abcdef0",
-				InstanceAction: "action",
-			},
+		want := &spothandlerv1.EC2SpotInstanceInterruptionWarningSpec{
+			EventTime:        metav1.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC),
+			InstanceID:       "i-1234567890abcdef0",
 			AvailabilityZone: "us-east-2a",
 		}
 		if diff := cmp.Diff(want, got); diff != "" {

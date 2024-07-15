@@ -24,6 +24,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"k8s.io/utils/clock"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -141,6 +142,16 @@ func main() {
 		SQSClient: sqsClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Queue")
+		os.Exit(1)
+	}
+
+	if err = (&controller.EC2SpotInstanceInterruptionWarningReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),
+		Clock:    clock.RealClock{},
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "EC2SpotInstanceInterruptionWarning")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

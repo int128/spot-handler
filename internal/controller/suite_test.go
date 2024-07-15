@@ -22,9 +22,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	ktesting "k8s.io/utils/clock/testing"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"k8s.io/client-go/kubernetes/scheme"
@@ -92,6 +94,13 @@ var _ = BeforeSuite(func() {
 		Scheme:    mgr.GetScheme(),
 		Recorder:  mgr.GetEventRecorderFor("queue-controller"),
 		SQSClient: &sqsMock{},
+	}).SetupWithManager(mgr)).To(Succeed())
+
+	Expect((&EC2SpotInstanceInterruptionWarningReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),
+		Clock:    ktesting.NewFakeClock(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)),
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	ctx, cancel := context.WithCancel(context.TODO())

@@ -1,0 +1,9 @@
+apiVersion: spothandler.int128.github.io/v1
+kind: EC2SpotInstanceInterruptionWarning
+metadata:
+  labels:
+    app.kubernetes.io/name: spot-handler
+    app.kubernetes.io/managed-by: kustomize
+  name: ec2spotinstanceinterruptionwarning-sample
+spec:
+  # TODO(user): Add fields here
