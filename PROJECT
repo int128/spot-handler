@@ -17,4 +17,12 @@ resources:
   kind: SQS
   path: github.com/int128/spot-handler/api/v1
   version: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: int128.github.io
+  group: spothandler
+  kind: Queue
+  path: github.com/int128/spot-handler/api/v1
+  version: v1
 version: "3"
