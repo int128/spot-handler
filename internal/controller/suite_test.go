@@ -43,6 +43,7 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var k8sClient client.Client
+var mockSQSClient mockSQSClientType
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -93,7 +94,7 @@ var _ = BeforeSuite(func() {
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
 		Recorder:  mgr.GetEventRecorderFor("queue-controller"),
-		SQSClient: &sqsMock{},
+		SQSClient: &mockSQSClient,
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	Expect((&EC2SpotInstanceInterruptionWarningReconciler{
