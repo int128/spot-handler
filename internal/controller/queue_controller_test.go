@@ -29,7 +29,7 @@ import (
 
 var _ = Describe("Queue Controller", func() {
 	Context("When reconciling a resource", func() {
-		ctx := context.Background()
+		ctx := context.TODO()
 
 		It("should successfully reconcile the resource", func() {
 			By("Creating a Node")
@@ -62,8 +62,7 @@ var _ = Describe("Queue Controller", func() {
 			By("Creating a Queue resource")
 			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-queue",
-					Namespace: "default",
+					Name: "test-queue",
 				},
 				Spec: spothandlerv1.QueueSpec{
 					URL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
