@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: sqses.spothandler.int128.github.io
+  name: queues.spothandler.int128.github.io
 spec:
   group: spothandler.int128.github.io
   names:
-    kind: SQS
-    listKind: SQSList
-    plural: sqses
-    singular: sqs
-  scope: Namespaced
+    kind: Queue
+    listKind: QueueList
+    plural: queues
+    singular: queue
+  scope: Cluster
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: SQS is the Schema for the sqs API
+        description: Queue is the Schema for the queues API
         properties:
           apiVersion:
             description: |-
@@ -37,14 +37,14 @@ spec:
           metadata:
             type: object
           spec:
-            description: SQSSpec defines the desired state of SQS
+            description: QueueSpec defines the desired state of Queue
             properties:
-              queueURL:
-                description: QueueURL refers to the queue for events.
+              url:
+                description: URL points to a queue of SQS.
                 type: string
             type: object
           status:
-            description: SQSStatus defines the observed state of SQS
+            description: QueueStatus defines the observed state of Queue
             type: object
         type: object
     served: true

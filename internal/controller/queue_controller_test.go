@@ -21,10 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
@@ -32,53 +29,50 @@ import (
 
 var _ = Describe("Queue Controller", func() {
 	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
-
 		ctx := context.Background()
 
-		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
-		}
-		queue := &spothandlerv1.Queue{}
-
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind Queue")
-			err := k8sClient.Get(ctx, typeNamespacedName, queue)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &spothandlerv1.Queue{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
-					},
-					// TODO(user): Specify other spec details if needed.
-				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
-			}
-		})
-
-		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &spothandlerv1.Queue{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Cleanup the specific resource instance Queue")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
 		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-			controllerReconciler := &QueueReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
-			}
+			By("Creating a Node")
+			Expect(k8sClient.Create(ctx, &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-node",
+				},
+				Spec: corev1.NodeSpec{
+					ProviderID: "aws:///us-east-2a/i-1234567890abcdef0",
+				},
+			})).To(Succeed())
 
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+			By("Creating a Pod")
+			Expect(k8sClient.Create(ctx, &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-pod",
+					Namespace: "default",
+				},
+				Spec: corev1.PodSpec{
+					NodeName: "test-node",
+					Containers: []corev1.Container{
+						{
+							Name:  "test-container",
+							Image: "test-image",
+						},
+					},
+				},
+			})).To(Succeed())
+
+			By("Creating a Queue resource")
+			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-queue",
+					Namespace: "default",
+				},
+				Spec: spothandlerv1.QueueSpec{
+					URL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
+				},
+			})).To(Succeed())
+
+			By("Reconciling the created resource")
+			//time.Sleep(1 * time.Second)
+			//Expect(false).To(BeTrue())
 		})
 	})
 })

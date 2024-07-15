@@ -1,5 +1,4 @@
 ## Append samples of your project ##
 resources:
-- spothandler_v1_sqs.yaml
 - spothandler_v1_queue.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

@@ -15,6 +15,3 @@ resources:
 # if you do not want those helpers be installed with your Project.
 - queue_editor_role.yaml
 - queue_viewer_role.yaml
-- sqs_editor_role.yaml
-- sqs_viewer_role.yaml
-

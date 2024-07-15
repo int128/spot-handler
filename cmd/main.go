@@ -134,18 +134,11 @@ func main() {
 	}
 	sqsClient := sqs.NewFromConfig(cfg)
 
-	if err = (&controller.SQSReconciler{
+	if err = (&controller.QueueReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("sqs-controller"),
+		Recorder:  mgr.GetEventRecorderFor("queue-controller"),
 		SQSClient: sqsClient,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SQS")
-		os.Exit(1)
-	}
-	if err = (&controller.QueueReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Queue")
 		os.Exit(1)
