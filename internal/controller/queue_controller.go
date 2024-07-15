@@ -89,6 +89,10 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				},
 				Spec: *spec,
 			}
+			if err := ctrl.SetControllerReference(&queueObj, &ec2SpotInstanceInterruptionWarning, r.Scheme); err != nil {
+				errs[i] = err
+				return
+			}
 			if err := r.Client.Create(ctx, &ec2SpotInstanceInterruptionWarning); err != nil {
 				errs[i] = err
 				return
