@@ -19,14 +19,15 @@ package controller
 import (
 	"context"
 
-	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
-var _ = Describe("SQS Controller", func() {
+var _ = Describe("Queue Controller", func() {
 	Context("When reconciling a resource", func() {
 		ctx := context.TODO()
 
@@ -58,14 +59,13 @@ var _ = Describe("SQS Controller", func() {
 				},
 			})).To(Succeed())
 
-			By("Creating a SQS resource")
-			Expect(k8sClient.Create(ctx, &spothandlerv1.SQS{
+			By("Creating a Queue resource")
+			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-sqs",
-					Namespace: "default",
+					Name: "test-queue",
 				},
-				Spec: spothandlerv1.SQSSpec{
-					QueueURL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
+				Spec: spothandlerv1.QueueSpec{
+					URL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
 				},
 			})).To(Succeed())
 

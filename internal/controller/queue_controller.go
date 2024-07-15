@@ -41,32 +41,33 @@ const (
 	podNodeNameField    = ".spec.nodeName"
 )
 
-// SQSReconciler reconciles a SQS object
-type SQSReconciler struct {
+// QueueReconciler reconciles a Queue object
+type QueueReconciler struct {
 	client.Client
 	Scheme    *runtime.Scheme
 	Recorder  record.EventRecorder
 	SQSClient SQSClient
 }
 
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqses,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqses/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=sqses/finalizers,verbs=update
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=queues,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=queues/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=queues/finalizers,verbs=update
+
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-func (r *SQSReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var sqsObj spothandlerv1.SQS
-	if err := r.Get(ctx, req.NamespacedName, &sqsObj); err != nil {
+	var queueObj spothandlerv1.Queue
+	if err := r.Get(ctx, req.NamespacedName, &queueObj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	receiveMessageOutput, err := r.SQSClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String(sqsObj.Spec.QueueURL),
+		QueueUrl:            aws.String(queueObj.Spec.URL),
 		MaxNumberOfMessages: 10,
 		WaitTimeSeconds:     10,
 	})
@@ -95,7 +96,7 @@ func (r *SQSReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 				return
 			}
 			if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
-				QueueUrl:      aws.String(sqsObj.Spec.QueueURL),
+				QueueUrl:      aws.String(queueObj.Spec.URL),
 				ReceiptHandle: message.ReceiptHandle,
 			}); err != nil {
 				errs[i] = err
@@ -106,7 +107,7 @@ func (r *SQSReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, errors.Join(errs...)
 }
 
-func (r *SQSReconciler) processNotice(ctx context.Context, notice spot.Notice) error {
+func (r *QueueReconciler) processNotice(ctx context.Context, notice spot.Notice) error {
 	nodeProviderID := fmt.Sprintf("aws:///%s/%s", notice.AvailabilityZone, notice.Detail.InstanceID)
 
 	var nodeList corev1.NodeList
@@ -146,7 +147,7 @@ func (r *SQSReconciler) processNotice(ctx context.Context, notice spot.Notice) e
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *SQSReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *QueueReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, nodeProviderIDField,
 		func(obj client.Object) []string {
 			node := obj.(*corev1.Node)
@@ -172,6 +173,6 @@ func (r *SQSReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&spothandlerv1.SQS{}).
+		For(&spothandlerv1.Queue{}).
 		Complete(r)
 }

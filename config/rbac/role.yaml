@@ -23,7 +23,7 @@ rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
-  - sqses
+  - queues
   verbs:
   - create
   - delete
@@ -35,13 +35,13 @@ rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
-  - sqses/finalizers
+  - queues/finalizers
   verbs:
   - update
 - apiGroups:
   - spothandler.int128.github.io
   resources:
-  - sqses/status
+  - queues/status
   verbs:
   - get
   - patch

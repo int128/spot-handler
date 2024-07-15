@@ -20,39 +20,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// SQSSpec defines the desired state of SQS
-type SQSSpec struct {
-	// QueueURL refers to the queue for events.
-	QueueURL string `json:"queueURL,omitempty"`
+// QueueSpec defines the desired state of Queue
+type QueueSpec struct {
+	// URL points to a queue of SQS.
+	URL string `json:"url,omitempty"`
 }
 
-// SQSStatus defines the observed state of SQS
-type SQSStatus struct {
+// QueueStatus defines the observed state of Queue
+type QueueStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 
-// SQS is the Schema for the sqs API
-type SQS struct {
+// Queue is the Schema for the queues API
+type Queue struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SQSSpec   `json:"spec,omitempty"`
-	Status SQSStatus `json:"status,omitempty"`
+	Spec   QueueSpec   `json:"spec,omitempty"`
+	Status QueueStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// SQSList contains a list of SQS
-type SQSList struct {
+// QueueList contains a list of Queue
+type QueueList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SQS `json:"items"`
+	Items           []Queue `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SQS{}, &SQSList{})
+	SchemeBuilder.Register(&Queue{}, &QueueList{})
 }

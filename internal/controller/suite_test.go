@@ -87,10 +87,10 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	Expect((&SQSReconciler{
+	Expect((&QueueReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("sqs-controller"),
+		Recorder:  mgr.GetEventRecorderFor("queue-controller"),
 		SQSClient: &sqsMock{},
 	}).SetupWithManager(mgr)).To(Succeed())
 
