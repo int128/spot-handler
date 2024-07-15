@@ -1,0 +1,62 @@
+name: docker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/docker.yaml
+      - Dockerfile
+      - go.*
+      - api/**
+      - internal/**
+      - config/**
+      - e2e_test/**
+    tags:
+      - v*
+  pull_request:
+    paths:
+      - .github/workflows/docker.yaml
+      - Dockerfile
+      - go.*
+      - api/**
+      - internal/**
+      - config/**
+      - e2e_test/**
+
+jobs:
+  build:
+    uses: int128/docker-build-workflow/.github/workflows/build.yaml@c355cd620f7e7bfb34f7ee37cb3adcd3aded8b6c # v1
+    permissions:
+      contents: read
+      packages: write
+    with:
+      platforms: linux/amd64,linux/arm64
+
+  e2e-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version: 1.22.5
+
+      - run: make -C e2e_test cluster
+
+      - uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # set outputs.tags to single tag
+          flavor: latest=false
+      - uses: int128/wait-for-docker-image-action@4975bd239c55b16ec86bbcca9cab53ac056f8e07 # v1.8.0
+        with:
+          tags: ${{ steps.metadata.outputs.tags }}
+
+      - run: make -C e2e_test deploy
+        env:
+          CONTROLLER_IMAGE: ${{ steps.metadata.outputs.tags }}
+
+      - run: make -C e2e_test logs-controller
+        if: always()
