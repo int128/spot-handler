@@ -20,20 +20,21 @@ import (
 	"context"
 	"time"
 
-	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
-var _ = Describe("EC2SpotInstanceInterruptionWarning Controller", func() {
+var _ = Describe("SpotInterruption Controller", func() {
 	Context("When reconciling a resource", func() {
 		ctx := context.TODO()
 
 		It("should successfully reconcile the resource", func() {
-			By("Creating a Node")
+			By("Creating a Node object")
 			Expect(k8sClient.Create(ctx, &corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-node",
@@ -43,7 +44,7 @@ var _ = Describe("EC2SpotInstanceInterruptionWarning Controller", func() {
 				},
 			})).To(Succeed())
 
-			By("Creating a Pod")
+			By("Creating a Pod object")
 			Expect(k8sClient.Create(ctx, &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-pod",
@@ -60,12 +61,12 @@ var _ = Describe("EC2SpotInstanceInterruptionWarning Controller", func() {
 				},
 			})).To(Succeed())
 
-			By("Creating an EC2SpotInstanceInterruptionWarning resource")
-			Expect(k8sClient.Create(ctx, &spothandlerv1.EC2SpotInstanceInterruptionWarning{
+			By("Creating an SpotInterruption object")
+			Expect(k8sClient.Create(ctx, &spothandlerv1.SpotInterruption{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-ec2spotinstanceinterruptionwarning",
+					Name: "test-spotinterruption",
 				},
-				Spec: spothandlerv1.EC2SpotInstanceInterruptionWarningSpec{
+				Spec: spothandlerv1.SpotInterruptionSpec{
 					EventTime:        metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
 					InstanceID:       "i-1234567890abcdef0",
 					AvailabilityZone: "us-east-2a",
@@ -74,9 +75,9 @@ var _ = Describe("EC2SpotInstanceInterruptionWarning Controller", func() {
 
 			By("Reconciling the created resource")
 			Eventually(func(g Gomega) {
-				var ec2SpotInstanceInterruptionWarning spothandlerv1.EC2SpotInstanceInterruptionWarning
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: "test-ec2spotinstanceinterruptionwarning"}, &ec2SpotInstanceInterruptionWarning)).To(Succeed())
-				g.Expect(ec2SpotInstanceInterruptionWarning.Status.ProcessedTime.UTC()).To(Equal(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)))
+				var spotInterruption spothandlerv1.SpotInterruption
+				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: "test-spotinterruption"}, &spotInterruption)).To(Succeed())
+				g.Expect(spotInterruption.Status.ProcessedTime.UTC()).To(Equal(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)))
 			}).Should(Succeed())
 		})
 	})

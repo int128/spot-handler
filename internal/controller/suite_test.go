@@ -97,7 +97,7 @@ var _ = BeforeSuite(func() {
 		SQSClient: &mockSQSClient,
 	}).SetupWithManager(mgr)).To(Succeed())
 
-	Expect((&EC2SpotInstanceInterruptionWarningReconciler{
+	Expect((&SpotInterruptionReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),

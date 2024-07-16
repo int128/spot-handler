@@ -1,5 +1,5 @@
 ## Append samples of your project ##
 resources:
 - spothandler_v1_queue.yaml
-- spothandler_v1_ec2spotinstanceinterruptionwarning.yaml
+- spothandler_v1_spotinterruption.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

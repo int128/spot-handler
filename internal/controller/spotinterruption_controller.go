@@ -37,27 +37,27 @@ const (
 	podNodeNameField    = ".spec.nodeName"
 )
 
-// EC2SpotInstanceInterruptionWarningReconciler reconciles a EC2SpotInstanceInterruptionWarning object
-type EC2SpotInstanceInterruptionWarningReconciler struct {
+// SpotInterruptionReconciler reconciles a SpotInterruption object
+type SpotInterruptionReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 	Clock    clock.PassiveClock
 }
 
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=ec2spotinstanceinterruptionwarnings,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=ec2spotinstanceinterruptionwarnings/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=ec2spotinstanceinterruptionwarnings/finalizers,verbs=update
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptions,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptions/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptions/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-func (r *EC2SpotInstanceInterruptionWarningReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var obj spothandlerv1.EC2SpotInstanceInterruptionWarning
+	var obj spothandlerv1.SpotInterruption
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -108,7 +108,7 @@ func (r *EC2SpotInstanceInterruptionWarningReconciler) Reconcile(ctx context.Con
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *EC2SpotInstanceInterruptionWarningReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SpotInterruptionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, nodeProviderIDField,
 		func(obj client.Object) []string {
 			node := obj.(*corev1.Node)
@@ -134,6 +134,6 @@ func (r *EC2SpotInstanceInterruptionWarningReconciler) SetupWithManager(mgr ctrl
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&spothandlerv1.EC2SpotInstanceInterruptionWarning{}).
+		For(&spothandlerv1.SpotInterruption{}).
 		Complete(r)
 }

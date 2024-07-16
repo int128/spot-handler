@@ -83,17 +83,17 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				logger.Info("Dropped an invalid message", "error", err, "body", aws.ToString(message.Body))
 				return
 			}
-			ec2SpotInstanceInterruptionWarning := spothandlerv1.EC2SpotInstanceInterruptionWarning{
+			spotInterruption := spothandlerv1.SpotInterruption{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: spec.InstanceID,
 				},
 				Spec: *spec,
 			}
-			if err := ctrl.SetControllerReference(&queueObj, &ec2SpotInstanceInterruptionWarning, r.Scheme); err != nil {
+			if err := ctrl.SetControllerReference(&queueObj, &spotInterruption, r.Scheme); err != nil {
 				errs[i] = err
 				return
 			}
-			if err := r.Client.Create(ctx, &ec2SpotInstanceInterruptionWarning); err != nil {
+			if err := r.Client.Create(ctx, &spotInterruption); err != nil {
 				errs[i] = err
 				return
 			}

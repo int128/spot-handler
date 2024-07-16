@@ -1,16 +1,16 @@
-# permissions for end users to view ec2spotinstanceinterruptionwarnings.
+# permissions for end users to view spotinterruptions.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: spot-handler
     app.kubernetes.io/managed-by: kustomize
-  name: ec2spotinstanceinterruptionwarning-viewer-role
+  name: spotinterruption-viewer-role
 rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
-  - ec2spotinstanceinterruptionwarnings
+  - spotinterruptions
   verbs:
   - get
   - list
@@ -18,6 +18,6 @@ rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
-  - ec2spotinstanceinterruptionwarnings/status
+  - spotinterruptions/status
   verbs:
   - get

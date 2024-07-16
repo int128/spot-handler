@@ -4,21 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: ec2spotinstanceinterruptionwarnings.spothandler.int128.github.io
+  name: spotinterruptions.spothandler.int128.github.io
 spec:
   group: spothandler.int128.github.io
   names:
-    kind: EC2SpotInstanceInterruptionWarning
-    listKind: EC2SpotInstanceInterruptionWarningList
-    plural: ec2spotinstanceinterruptionwarnings
-    singular: ec2spotinstanceinterruptionwarning
+    kind: SpotInterruption
+    listKind: SpotInterruptionList
+    plural: spotinterruptions
+    singular: spotinterruption
   scope: Cluster
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: EC2SpotInstanceInterruptionWarning is the Schema for the ec2spotinstanceinterruptionwarnings
-          API
+        description: SpotInterruption is the Schema for the spotinterruptions API
         properties:
           apiVersion:
             description: |-
@@ -38,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: EC2SpotInstanceInterruptionWarningSpec represents an EC2SpotInstanceInterruptionWarning
+            description: SpotInterruptionSpec represents an EC2SpotInstanceInterruptionWarning
               event.
             properties:
               availabilityZone:
@@ -50,8 +49,7 @@ spec:
                 type: string
             type: object
           status:
-            description: EC2SpotInstanceInterruptionWarningStatus defines the observed
-              state of EC2SpotInstanceInterruptionWarning
+            description: SpotInterruptionStatus defines the observed state of SpotInterruption
             properties:
               processedTime:
                 format: date-time

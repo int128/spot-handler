@@ -20,15 +20,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EC2SpotInstanceInterruptionWarningSpec represents an EC2SpotInstanceInterruptionWarning event.
-type EC2SpotInstanceInterruptionWarningSpec struct {
+// SpotInterruptionSpec represents an EC2SpotInstanceInterruptionWarning event.
+type SpotInterruptionSpec struct {
 	EventTime        metav1.Time `json:"eventTime,omitempty"`
 	InstanceID       string      `json:"instanceID,omitempty"`
 	AvailabilityZone string      `json:"availabilityZone,omitempty"`
 }
 
-// EC2SpotInstanceInterruptionWarningStatus defines the observed state of EC2SpotInstanceInterruptionWarning
-type EC2SpotInstanceInterruptionWarningStatus struct {
+// SpotInterruptionStatus defines the observed state of SpotInterruption
+type SpotInterruptionStatus struct {
 	ProcessedTime metav1.Time `json:"processedTime,omitempty"`
 }
 
@@ -36,24 +36,24 @@ type EC2SpotInstanceInterruptionWarningStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
 
-// EC2SpotInstanceInterruptionWarning is the Schema for the ec2spotinstanceinterruptionwarnings API
-type EC2SpotInstanceInterruptionWarning struct {
+// SpotInterruption is the Schema for the spotinterruptions API
+type SpotInterruption struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EC2SpotInstanceInterruptionWarningSpec   `json:"spec,omitempty"`
-	Status EC2SpotInstanceInterruptionWarningStatus `json:"status,omitempty"`
+	Spec   SpotInterruptionSpec   `json:"spec,omitempty"`
+	Status SpotInterruptionStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// EC2SpotInstanceInterruptionWarningList contains a list of EC2SpotInstanceInterruptionWarning
-type EC2SpotInstanceInterruptionWarningList struct {
+// SpotInterruptionList contains a list of SpotInterruption
+type SpotInterruptionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []EC2SpotInstanceInterruptionWarning `json:"items"`
+	Items           []SpotInterruption `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&EC2SpotInstanceInterruptionWarning{}, &EC2SpotInstanceInterruptionWarningList{})
+	SchemeBuilder.Register(&SpotInterruption{}, &SpotInterruptionList{})
 }
