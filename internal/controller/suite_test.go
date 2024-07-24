@@ -44,6 +44,7 @@ import (
 
 var k8sClient client.Client
 var mockSQSClient mockSQSClientType
+var fakePassiveClock = ktesting.NewFakePassiveClock(time.Date(2006, 2, 1, 1, 1, 1, 0, time.UTC))
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -101,7 +102,7 @@ var _ = BeforeSuite(func() {
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),
-		Clock:    ktesting.NewFakeClock(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)),
+		Clock:    fakePassiveClock,
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	ctx, cancel := context.WithCancel(context.TODO())

@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,8 @@ const (
 	nodeProviderIDField = ".spec.providerID"
 	podNodeNameField    = ".spec.nodeName"
 )
+
+const spotInterruptionObjectRetentionPeriod = 24 * time.Hour
 
 // SpotInterruptionReconciler reconciles a SpotInterruption object
 type SpotInterruptionReconciler struct {
@@ -64,45 +67,54 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
+	if !obj.Status.ProcessedAt.IsZero() {
+		if obj.Status.ProcessedAt.Add(spotInterruptionObjectRetentionPeriod).Before(r.Clock.Now()) {
+			logger.Info("Deleting an expired SpotInterruption", "processedAt", obj.Status.ProcessedAt)
+			if err := r.Delete(ctx, &obj); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		logger.Info("SpotInterruption is already processed", "processedAt", obj.Status.ProcessedAt)
+		return ctrl.Result{}, nil
+	}
 
+	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
 	var nodeList corev1.NodeList
 	if err := r.List(ctx, &nodeList, client.MatchingFields{nodeProviderIDField: nodeProviderID}); err != nil {
 		return ctrl.Result{}, err
 	}
 	if len(nodeList.Items) == 0 {
 		logger.Info("Node not found", "providerID", nodeProviderID)
-		return ctrl.Result{}, nil
 	}
-	node := nodeList.Items[0]
-	r.Recorder.AnnotatedEventf(&node,
-		map[string]string{
-			"host": obj.Spec.InstanceID,
-		},
-		corev1.EventTypeWarning, "SpotInterrupted",
-		"Instance %s is spot interrupted", obj.Spec.InstanceID)
-
-	var podList corev1.PodList
-	if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
-		return ctrl.Result{}, err
-	}
-	if len(podList.Items) == 0 {
-		logger.Info("No pod is affected", "providerID", nodeProviderID, "node", node.Name)
-		return ctrl.Result{}, nil
-	}
-	for _, pod := range podList.Items {
-		r.Recorder.AnnotatedEventf(&pod,
+	for _, node := range nodeList.Items {
+		r.Recorder.AnnotatedEventf(&node,
 			map[string]string{
 				"host": obj.Spec.InstanceID,
 			},
 			corev1.EventTypeWarning, "SpotInterrupted",
 			"Instance %s is spot interrupted", obj.Spec.InstanceID)
-		//if err := r.Delete(ctx, &pod); err != nil {
-		//	return err
-		//}
+
+		var podList corev1.PodList
+		if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
+			return ctrl.Result{}, err
+		}
+		if len(podList.Items) == 0 {
+			logger.Info("No pod is affected", "providerID", nodeProviderID, "node", node.Name)
+		}
+		for _, pod := range podList.Items {
+			r.Recorder.AnnotatedEventf(&pod,
+				map[string]string{
+					"host": obj.Spec.InstanceID,
+				},
+				corev1.EventTypeWarning, "SpotInterrupted",
+				"Instance %s is spot interrupted", obj.Spec.InstanceID)
+			//if err := r.Delete(ctx, &pod); err != nil {
+			//	return err
+			//}
+		}
 	}
 
-	obj.Status.ProcessedTime = metav1.NewTime(r.Clock.Now())
+	obj.Status.ProcessedAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Status().Update(ctx, &obj); err != nil {
 		return ctrl.Result{}, err
 	}

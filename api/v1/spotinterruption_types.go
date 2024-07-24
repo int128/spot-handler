@@ -29,7 +29,7 @@ type SpotInterruptionSpec struct {
 
 // SpotInterruptionStatus defines the observed state of SpotInterruption
 type SpotInterruptionStatus struct {
-	ProcessedTime metav1.Time `json:"processedTime,omitempty"`
+	ProcessedAt metav1.Time `json:"processedAt,omitempty"`
 }
 
 // +kubebuilder:object:root=true
