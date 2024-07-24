@@ -49,6 +49,8 @@ type SpotInterruptionReconciler struct {
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptions/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptions/finalizers,verbs=update
 
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
