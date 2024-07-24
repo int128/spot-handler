@@ -8,7 +8,7 @@ on:
 
 jobs:
   manifest:
-    uses: int128/kubebuilder-workflows/.github/workflows/manifest.yaml@96546ff45434040af88e8a5280e49609d4796ff4 # v1
+    uses: int128/kubebuilder-workflows/.github/workflows/manifest.yaml@af0ac48fdce86f572a8c9053e0d9bd842be9c834 # v1.0.0
     permissions:
       contents: read
       pull-requests: write
