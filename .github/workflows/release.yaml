@@ -11,6 +11,6 @@ on:
 
 jobs:
   manifest:
-    uses: int128/kubebuilder-workflows/.github/workflows/release.yaml@081412b6598ba94c15151a391adce0f74ecbce12 # v1
+    uses: int128/kubebuilder-workflows/.github/workflows/release.yaml@af0ac48fdce86f572a8c9053e0d9bd842be9c834 # v1.0.0
     permissions:
       contents: write
