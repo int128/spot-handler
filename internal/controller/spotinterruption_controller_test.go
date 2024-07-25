@@ -35,23 +35,24 @@ var _ = Describe("SpotInterruption Controller", func() {
 
 		It("should successfully reconcile the resource", func() {
 			By("Creating a Node object")
-			Expect(k8sClient.Create(ctx, &corev1.Node{
+			fixtureNode := corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node",
+					GenerateName: "test-node-",
 				},
 				Spec: corev1.NodeSpec{
-					ProviderID: "aws:///us-east-2a/i-1234567890abcdef0",
+					ProviderID: "aws:///us-east-2a/i-00000000000000001",
 				},
-			})).To(Succeed())
+			}
+			Expect(k8sClient.Create(ctx, &fixtureNode)).To(Succeed())
 
 			By("Creating a Pod object")
-			Expect(k8sClient.Create(ctx, &corev1.Pod{
+			fixturePod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod",
-					Namespace: "default",
+					GenerateName: "test-pod-",
+					Namespace:    "default",
 				},
 				Spec: corev1.PodSpec{
-					NodeName: "test-node",
+					NodeName: fixtureNode.Name,
 					Containers: []corev1.Container{
 						{
 							Name:  "test-container",
@@ -59,25 +60,26 @@ var _ = Describe("SpotInterruption Controller", func() {
 						},
 					},
 				},
-			})).To(Succeed())
+			}
+			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
 
 			By("Creating an SpotInterruption object")
-			Expect(k8sClient.Create(ctx, &spothandlerv1.SpotInterruption{
+			spotInterruption := spothandlerv1.SpotInterruption{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-spotinterruption",
+					GenerateName: "test-spotinterruption-",
 				},
 				Spec: spothandlerv1.SpotInterruptionSpec{
 					EventAt:          metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
-					InstanceID:       "i-1234567890abcdef0",
+					InstanceID:       "i-00000000000000001",
 					AvailabilityZone: "us-east-2a",
 				},
-			})).To(Succeed())
+			}
+			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
 
-			By("Reconciling the created resource")
+			By("Checking if the object is processed")
 			Eventually(func(g Gomega) {
-				var spotInterruption spothandlerv1.SpotInterruption
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: "test-spotinterruption"}, &spotInterruption)).To(Succeed())
-				g.Expect(spotInterruption.Status.ProcessedAt.UTC()).To(Equal(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)))
+				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)).To(Succeed())
+				g.Expect(spotInterruption.Status.ProcessedAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 		})
 	})
