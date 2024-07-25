@@ -148,10 +148,10 @@ func main() {
 	if err = (&controller.SpotInterruptionReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),
+		Recorder: mgr.GetEventRecorderFor("spotinterruption-controller"),
 		Clock:    clock.RealClock{},
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "EC2SpotInstanceInterruptionWarning")
+		setupLog.Error(err, "unable to create controller", "controller", "SpotInterruption")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
