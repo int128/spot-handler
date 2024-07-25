@@ -57,15 +57,26 @@ type SpotInterruptionReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-
 	var obj spothandlerv1.SpotInterruption
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
+	if result, err := r.process(ctx, obj); err != nil {
+		return result, err
+	}
 
+	obj.Status.ProcessedAt = metav1.NewTime(r.Clock.Now())
+	if err := r.Status().Update(ctx, &obj); err != nil {
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *SpotInterruptionReconciler) process(ctx context.Context, obj spothandlerv1.SpotInterruption) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
 	var nodeList corev1.NodeList
 	if err := r.List(ctx, &nodeList, client.MatchingFields{nodeProviderIDField: nodeProviderID}); err != nil {
 		return ctrl.Result{}, err
@@ -100,11 +111,6 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		//if err := r.Delete(ctx, &pod); err != nil {
 		//	return err
 		//}
-	}
-
-	obj.Status.ProcessedAt = metav1.NewTime(r.Clock.Now())
-	if err := r.Status().Update(ctx, &obj); err != nil {
-		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }
