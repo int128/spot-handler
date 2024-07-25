@@ -51,6 +51,26 @@ spec:
           status:
             description: SpotInterruptionStatus defines the observed state of SpotInterruption
             properties:
+              nodes:
+                items:
+                  description: SpotInterruptionStatusNode defines the observed state
+                    of interrupted node
+                  properties:
+                    name:
+                      type: string
+                  type: object
+                type: array
+              pods:
+                items:
+                  description: SpotInterruptionStatusPod defines the observed state
+                    of interrupted pod
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  type: object
+                type: array
               processedAt:
                 format: date-time
                 type: string
