@@ -92,24 +92,19 @@ func (r *SpotInterruptionReconciler) process(ctx context.Context, obj *spothandl
 	}
 
 	for _, node := range nodeList.Items {
-		r.Recorder.AnnotatedEventf(&node,
-			map[string]string{
-				"host": obj.Spec.InstanceID,
-			},
-			corev1.EventTypeWarning, "SpotInterrupted",
-			"Instance %s is spot interrupted", obj.Spec.InstanceID)
+		r.Recorder.Eventf(&node, corev1.EventTypeWarning, "SpotInterrupted",
+			"SpotInterrupted: Node %s, Instance %s in %s",
+			node.Name, obj.Spec.InstanceID, obj.Spec.AvailabilityZone)
 
 		var podList corev1.PodList
 		if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
 			return ctrl.Result{}, err
 		}
 		for _, pod := range podList.Items {
-			r.Recorder.AnnotatedEventf(&pod,
-				map[string]string{
-					"host": obj.Spec.InstanceID,
-				},
-				corev1.EventTypeWarning, "SpotInterrupted",
-				"Instance %s is spot interrupted", obj.Spec.InstanceID)
+			r.Recorder.Eventf(&pod, corev1.EventTypeWarning, "SpotInterrupted",
+				"SpotInterrupted: Pod %s, Node %s, Instance %s in %s",
+				pod.Name, node.Name, obj.Spec.InstanceID, obj.Spec.AvailabilityZone)
+
 			//if err := r.Delete(ctx, &pod); err != nil {
 			//	return err
 			//}
