@@ -81,6 +81,18 @@ var _ = Describe("SpotInterruption Controller", func() {
 				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)).To(Succeed())
 				g.Expect(spotInterruption.Status.ProcessedAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
+
+			Expect(spotInterruption.Status.Nodes).To(Equal([]spothandlerv1.SpotInterruptionStatusNode{
+				{
+					Name: fixtureNode.Name,
+				},
+			}))
+			Expect(spotInterruption.Status.Pods).To(Equal([]spothandlerv1.SpotInterruptionStatusPod{
+				{
+					Name:      fixturePod.Name,
+					Namespace: fixturePod.Namespace,
+				},
+			}))
 		})
 	})
 })
