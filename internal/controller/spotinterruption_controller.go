@@ -114,13 +114,13 @@ func (r *SpotInterruptionReconciler) process(ctx context.Context, obj *spothandl
 			//	return err
 			//}
 
-			obj.Status.Pods = append(obj.Status.Pods, spothandlerv1.SpotInterruptionStatusPod{
+			obj.Status.Interrupted.Pods = append(obj.Status.Interrupted.Pods, spothandlerv1.InterruptedPod{
 				Name:      pod.Name,
 				Namespace: pod.Namespace,
 			})
 		}
 
-		obj.Status.Nodes = append(obj.Status.Nodes, spothandlerv1.SpotInterruptionStatusNode{
+		obj.Status.Interrupted.Nodes = append(obj.Status.Interrupted.Nodes, spothandlerv1.InterruptedNode{
 			Name: node.Name,
 		})
 	}

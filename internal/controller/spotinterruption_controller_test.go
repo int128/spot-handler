@@ -82,12 +82,12 @@ var _ = Describe("SpotInterruption Controller", func() {
 				g.Expect(spotInterruption.Status.ProcessedAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 
-			Expect(spotInterruption.Status.Nodes).To(Equal([]spothandlerv1.SpotInterruptionStatusNode{
+			Expect(spotInterruption.Status.Interrupted.Nodes).To(Equal([]spothandlerv1.InterruptedNode{
 				{
 					Name: fixtureNode.Name,
 				},
 			}))
-			Expect(spotInterruption.Status.Pods).To(Equal([]spothandlerv1.SpotInterruptionStatusPod{
+			Expect(spotInterruption.Status.Interrupted.Pods).To(Equal([]spothandlerv1.InterruptedPod{
 				{
 					Name:      fixturePod.Name,
 					Namespace: fixturePod.Namespace,

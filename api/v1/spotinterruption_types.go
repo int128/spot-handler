@@ -29,18 +29,28 @@ type SpotInterruptionSpec struct {
 
 // SpotInterruptionStatus defines the observed state of SpotInterruption
 type SpotInterruptionStatus struct {
-	ProcessedAt metav1.Time                  `json:"processedAt,omitempty"`
-	Nodes       []SpotInterruptionStatusNode `json:"nodes,omitempty"`
-	Pods        []SpotInterruptionStatusPod  `json:"pods,omitempty"`
+	// Timestamp at which the SpotInterruption was processed.
+	// +optional
+	ProcessedAt metav1.Time `json:"processedAt,omitempty"`
+
+	// Interrupted resources.
+	// +optional
+	Interrupted SpotInterruptionStatusInterrupted `json:"interrupted,omitempty"`
 }
 
-// SpotInterruptionStatusNode defines the observed state of interrupted node
-type SpotInterruptionStatusNode struct {
+// SpotInterruptionStatusInterrupted defines the observed state of interrupted resources
+type SpotInterruptionStatusInterrupted struct {
+	Nodes []InterruptedNode `json:"nodes,omitempty"`
+	Pods  []InterruptedPod  `json:"pods,omitempty"`
+}
+
+// InterruptedNode defines the observed state of interrupted node
+type InterruptedNode struct {
 	Name string `json:"name,omitempty"`
 }
 
-// SpotInterruptionStatusPod defines the observed state of interrupted pod
-type SpotInterruptionStatusPod struct {
+// InterruptedPod defines the observed state of interrupted pod
+type InterruptedPod struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 }
