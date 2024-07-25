@@ -67,7 +67,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 					Name: "test-spotinterruption",
 				},
 				Spec: spothandlerv1.SpotInterruptionSpec{
-					EventTime:        metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
+					EventAt:          metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
 					InstanceID:       "i-1234567890abcdef0",
 					AvailabilityZone: "us-east-2a",
 				},
@@ -77,7 +77,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 			Eventually(func(g Gomega) {
 				var spotInterruption spothandlerv1.SpotInterruption
 				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: "test-spotinterruption"}, &spotInterruption)).To(Succeed())
-				g.Expect(spotInterruption.Status.ProcessedTime.UTC()).To(Equal(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)))
+				g.Expect(spotInterruption.Status.ProcessedAt.UTC()).To(Equal(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)))
 			}).Should(Succeed())
 		})
 	})

@@ -42,7 +42,7 @@ spec:
             properties:
               availabilityZone:
                 type: string
-              eventTime:
+              eventAt:
                 format: date-time
                 type: string
               instanceID:
@@ -51,7 +51,7 @@ spec:
           status:
             description: SpotInterruptionStatus defines the observed state of SpotInterruption
             properties:
-              processedTime:
+              processedAt:
                 format: date-time
                 type: string
             type: object
