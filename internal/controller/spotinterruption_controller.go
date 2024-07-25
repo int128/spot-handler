@@ -57,23 +57,28 @@ type SpotInterruptionReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
 	var obj spothandlerv1.SpotInterruption
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	if result, err := r.process(ctx, obj); err != nil {
+	if !obj.Status.ProcessedAt.IsZero() {
+		return ctrl.Result{}, nil
+	}
+	if result, err := r.process(ctx, &obj); err != nil {
 		return result, err
 	}
-
 	obj.Status.ProcessedAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Status().Update(ctx, &obj); err != nil {
 		return ctrl.Result{}, err
 	}
+
+	logger.Info("Successfully processed SpotInterruption")
 	return ctrl.Result{}, nil
 }
 
-func (r *SpotInterruptionReconciler) process(ctx context.Context, obj spothandlerv1.SpotInterruption) (ctrl.Result, error) {
+func (r *SpotInterruptionReconciler) process(ctx context.Context, obj *spothandlerv1.SpotInterruption) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
@@ -82,35 +87,42 @@ func (r *SpotInterruptionReconciler) process(ctx context.Context, obj spothandle
 		return ctrl.Result{}, err
 	}
 	if len(nodeList.Items) == 0 {
-		logger.Info("Node not found", "providerID", nodeProviderID)
+		logger.Info("Node does not exist", "providerID", nodeProviderID)
 		return ctrl.Result{}, nil
 	}
-	node := nodeList.Items[0]
-	r.Recorder.AnnotatedEventf(&node,
-		map[string]string{
-			"host": obj.Spec.InstanceID,
-		},
-		corev1.EventTypeWarning, "SpotInterrupted",
-		"Instance %s is spot interrupted", obj.Spec.InstanceID)
 
-	var podList corev1.PodList
-	if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
-		return ctrl.Result{}, err
-	}
-	if len(podList.Items) == 0 {
-		logger.Info("No pod is affected", "providerID", nodeProviderID, "node", node.Name)
-		return ctrl.Result{}, nil
-	}
-	for _, pod := range podList.Items {
-		r.Recorder.AnnotatedEventf(&pod,
+	for _, node := range nodeList.Items {
+		r.Recorder.AnnotatedEventf(&node,
 			map[string]string{
 				"host": obj.Spec.InstanceID,
 			},
 			corev1.EventTypeWarning, "SpotInterrupted",
 			"Instance %s is spot interrupted", obj.Spec.InstanceID)
-		//if err := r.Delete(ctx, &pod); err != nil {
-		//	return err
-		//}
+
+		var podList corev1.PodList
+		if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
+			return ctrl.Result{}, err
+		}
+		for _, pod := range podList.Items {
+			r.Recorder.AnnotatedEventf(&pod,
+				map[string]string{
+					"host": obj.Spec.InstanceID,
+				},
+				corev1.EventTypeWarning, "SpotInterrupted",
+				"Instance %s is spot interrupted", obj.Spec.InstanceID)
+			//if err := r.Delete(ctx, &pod); err != nil {
+			//	return err
+			//}
+
+			obj.Status.Interrupted.Pods = append(obj.Status.Interrupted.Pods, spothandlerv1.InterruptedPod{
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+			})
+		}
+
+		obj.Status.Interrupted.Nodes = append(obj.Status.Interrupted.Nodes, spothandlerv1.InterruptedNode{
+			Name: node.Name,
+		})
 	}
 	return ctrl.Result{}, nil
 }

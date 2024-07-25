@@ -29,7 +29,30 @@ type SpotInterruptionSpec struct {
 
 // SpotInterruptionStatus defines the observed state of SpotInterruption
 type SpotInterruptionStatus struct {
+	// Timestamp at which the SpotInterruption was processed.
+	// +optional
 	ProcessedAt metav1.Time `json:"processedAt,omitempty"`
+
+	// Interrupted resources.
+	// +optional
+	Interrupted SpotInterruptionStatusInterrupted `json:"interrupted,omitempty"`
+}
+
+// SpotInterruptionStatusInterrupted defines the observed state of interrupted resources
+type SpotInterruptionStatusInterrupted struct {
+	Nodes []InterruptedNode `json:"nodes,omitempty"`
+	Pods  []InterruptedPod  `json:"pods,omitempty"`
+}
+
+// InterruptedNode defines the observed state of interrupted node
+type InterruptedNode struct {
+	Name string `json:"name,omitempty"`
+}
+
+// InterruptedPod defines the observed state of interrupted pod
+type InterruptedPod struct {
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // +kubebuilder:object:root=true
