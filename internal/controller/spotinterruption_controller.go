@@ -57,19 +57,24 @@ type SpotInterruptionReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
 	var obj spothandlerv1.SpotInterruption
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
+	if !obj.Status.ProcessedAt.IsZero() {
+		return ctrl.Result{}, nil
+	}
 	if result, err := r.process(ctx, &obj); err != nil {
 		return result, err
 	}
-
 	obj.Status.ProcessedAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Status().Update(ctx, &obj); err != nil {
 		return ctrl.Result{}, err
 	}
+
+	logger.Info("Successfully processed SpotInterruption")
 	return ctrl.Result{}, nil
 }
 
