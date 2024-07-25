@@ -22,14 +22,14 @@ import (
 
 // SpotInterruptionSpec represents an EC2SpotInstanceInterruptionWarning event.
 type SpotInterruptionSpec struct {
-	EventTime        metav1.Time `json:"eventTime,omitempty"`
+	EventAt          metav1.Time `json:"eventAt,omitempty"`
 	InstanceID       string      `json:"instanceID,omitempty"`
 	AvailabilityZone string      `json:"availabilityZone,omitempty"`
 }
 
 // SpotInterruptionStatus defines the observed state of SpotInterruption
 type SpotInterruptionStatus struct {
-	ProcessedTime metav1.Time `json:"processedTime,omitempty"`
+	ProcessedAt metav1.Time `json:"processedAt,omitempty"`
 }
 
 // +kubebuilder:object:root=true

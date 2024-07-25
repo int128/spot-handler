@@ -31,7 +31,7 @@ func TestParse(t *testing.T) {
 			t.Fatalf("Parse() error: %s", err)
 		}
 		want := &spothandlerv1.SpotInterruptionSpec{
-			EventTime:        metav1.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC),
+			EventAt:          metav1.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC),
 			InstanceID:       "i-1234567890abcdef0",
 			AvailabilityZone: "us-east-2a",
 		}

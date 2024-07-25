@@ -102,7 +102,7 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		//}
 	}
 
-	obj.Status.ProcessedTime = metav1.NewTime(r.Clock.Now())
+	obj.Status.ProcessedAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Status().Update(ctx, &obj); err != nil {
 		return ctrl.Result{}, err
 	}

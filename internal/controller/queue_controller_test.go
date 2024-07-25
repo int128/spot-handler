@@ -71,7 +71,7 @@ var _ = Describe("Queue Controller", func() {
 					ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &spotInterruption)
 			}).Should(Succeed())
 
-			Expect(spotInterruption.Spec.EventTime.UTC()).To(Equal(
+			Expect(spotInterruption.Spec.EventAt.UTC()).To(Equal(
 				time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
 			Expect(spotInterruption.Spec.InstanceID).To(Equal("i-1234567890abcdef0"))
 			Expect(spotInterruption.Spec.AvailabilityZone).To(Equal("us-east-2a"))
