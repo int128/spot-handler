@@ -102,7 +102,7 @@ var _ = BeforeSuite(func() {
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),
-		Clock:    ktesting.NewFakeClock(fakeNow),
+		Clock:    ktesting.NewFakePassiveClock(fakeNow),
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	ctx, cancel := context.WithCancel(context.TODO())
