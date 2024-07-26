@@ -22,7 +22,7 @@ import (
 
 // SpotInterruptionSpec represents an EC2SpotInstanceInterruptionWarning event.
 type SpotInterruptionSpec struct {
-	EventAt          metav1.Time `json:"eventAt,omitempty"`
+	EventTimestamp   metav1.Time `json:"eventTimestamp,omitempty"`
 	InstanceID       string      `json:"instanceID,omitempty"`
 	AvailabilityZone string      `json:"availabilityZone,omitempty"`
 }
