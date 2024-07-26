@@ -52,7 +52,7 @@ spec:
             description: SpotInterruptionStatus defines the observed state of SpotInterruption
             properties:
               interrupted:
-                description: Interrupted resources.
+                description: The resource which is affected by the interruption.
                 properties:
                   nodes:
                     items:
@@ -75,8 +75,9 @@ spec:
                       type: object
                     type: array
                 type: object
-              processedAt:
-                description: Timestamp at which the SpotInterruption was processed.
+              reconciledAt:
+                description: Timestamp at which the SpotInterruption was reconciled
+                  successfully.
                 format: date-time
                 type: string
             type: object

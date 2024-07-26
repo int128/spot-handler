@@ -29,11 +29,11 @@ type SpotInterruptionSpec struct {
 
 // SpotInterruptionStatus defines the observed state of SpotInterruption
 type SpotInterruptionStatus struct {
-	// Timestamp at which the SpotInterruption was processed.
+	// Timestamp at which the SpotInterruption was reconciled successfully.
 	// +optional
-	ProcessedAt metav1.Time `json:"processedAt,omitempty"`
+	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
 
-	// Interrupted resources.
+	// The resource which is affected by the interruption.
 	// +optional
 	Interrupted SpotInterruptionStatusInterrupted `json:"interrupted,omitempty"`
 }
