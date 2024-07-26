@@ -69,7 +69,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 					GenerateName: "test-spotinterruption-",
 				},
 				Spec: spothandlerv1.SpotInterruptionSpec{
-					EventAt:          metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
+					EventTimestamp:   metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
 					InstanceID:       "i-00000000000000001",
 					AvailabilityZone: "us-east-2a",
 				},

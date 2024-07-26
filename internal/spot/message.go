@@ -42,7 +42,7 @@ func Parse(body string) (*spothandlerv1.SpotInterruptionSpec, error) {
 	}
 
 	return &spothandlerv1.SpotInterruptionSpec{
-		EventAt:          metav1.NewTime(msg.Time),
+		EventTimestamp:   metav1.NewTime(msg.Time),
 		InstanceID:       msg.Detail.InstanceID,
 		AvailabilityZone: availabilityZone,
 	}, nil

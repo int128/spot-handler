@@ -42,7 +42,7 @@ spec:
             properties:
               availabilityZone:
                 type: string
-              eventAt:
+              eventTimestamp:
                 format: date-time
                 type: string
               instanceID:
