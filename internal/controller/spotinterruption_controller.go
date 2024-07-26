@@ -63,22 +63,22 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	if !obj.Status.ProcessedAt.IsZero() {
+	if !obj.Status.ReconciledAt.IsZero() {
 		return ctrl.Result{}, nil
 	}
-	if result, err := r.process(ctx, &obj); err != nil {
+	if result, err := r.reconcilePods(ctx, &obj); err != nil {
 		return result, err
 	}
-	obj.Status.ProcessedAt = metav1.NewTime(r.Clock.Now())
+	obj.Status.ReconciledAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Status().Update(ctx, &obj); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Successfully processed SpotInterruption")
+	logger.Info("Successfully reconciled SpotInterruption")
 	return ctrl.Result{}, nil
 }
 
-func (r *SpotInterruptionReconciler) process(ctx context.Context, obj *spothandlerv1.SpotInterruption) (ctrl.Result, error) {
+func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spothandlerv1.SpotInterruption) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
