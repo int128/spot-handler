@@ -46,10 +46,12 @@ var _ = Describe("Queue Controller", func() {
 			})).To(Succeed())
 
 			By("Sending a message to the queue")
-			Expect(mockSQSClient.messages).To(BeEmpty())
-			mockSQSClient.append(sqstypes.Message{
-				// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
-				Body: aws.String(`{
+			mockSQSClient.reset(
+				"https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
+				[]sqstypes.Message{
+					// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
+					{
+						Body: aws.String(`{
     "version": "0",
     "id": "12345678-1234-1234-1234-123456789012",
     "detail-type": "EC2 Spot Instance Interruption Warning",
@@ -63,7 +65,10 @@ var _ = Describe("Queue Controller", func() {
         "instance-action": "action"
     }
 }`),
-			})
+						ReceiptHandle: aws.String("ReceiptHandle-1"),
+					},
+				})
+			Expect(mockSQSClient.messages).To(HaveLen(1))
 
 			By("Checking if a SpotInterruption resource is created")
 			var spotInterruption spothandlerv1.SpotInterruption
