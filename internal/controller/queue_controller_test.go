@@ -31,21 +31,21 @@ import (
 )
 
 var _ = Describe("Queue Controller", func() {
-	Context("When reconciling a resource", func() {
-		ctx := context.TODO()
+	Context("When a message is received", func() {
+		It("should create a SpotInterruption resource", func() {
+			ctx := context.TODO()
 
-		It("should successfully reconcile the resource", func() {
 			By("Creating a Queue object")
 			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-queue",
+					GenerateName: "test-queue-",
 				},
 				Spec: spothandlerv1.QueueSpec{
 					URL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
 				},
 			})).To(Succeed())
 
-			By("Reconciling the created resource")
+			By("Sending a message to the queue")
 			Expect(mockSQSClient.messages).To(BeEmpty())
 			mockSQSClient.append(sqstypes.Message{
 				// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
@@ -65,17 +65,17 @@ var _ = Describe("Queue Controller", func() {
 }`),
 			})
 
+			By("Checking if a SpotInterruption resource is created")
 			var spotInterruption spothandlerv1.SpotInterruption
 			Eventually(func() error {
-				return k8sClient.Get(ctx,
-					ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &spotInterruption)
+				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &spotInterruption)
 			}).Should(Succeed())
 
-			Expect(spotInterruption.Spec.EventTimestamp.UTC()).To(Equal(
-				time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
+			Expect(spotInterruption.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
 			Expect(spotInterruption.Spec.InstanceID).To(Equal("i-1234567890abcdef0"))
 			Expect(spotInterruption.Spec.AvailabilityZone).To(Equal("us-east-2a"))
 
+			By("Checking if the message is deleted from the queue")
 			Expect(mockSQSClient.messages).To(BeEmpty())
 		})
 	})

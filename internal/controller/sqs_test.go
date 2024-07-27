@@ -8,12 +8,12 @@ import (
 	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
+var _ SQSClient = &mockSQSClientType{}
+
 type mockSQSClientType struct {
 	mu       sync.Mutex
 	messages []sqstypes.Message
 }
-
-var _ SQSClient = &mockSQSClientType{}
 
 func (s *mockSQSClientType) append(msg sqstypes.Message) {
 	s.mu.Lock()
