@@ -38,17 +38,6 @@ var _ = Describe("Queue Controller", func() {
 			ctx := context.TODO()
 			const sqsQueueURL = "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue"
 
-			By("Creating a Queue object")
-			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-queue-",
-				},
-				Spec: spothandlerv1.QueueSpec{
-					URL: sqsQueueURL,
-				},
-			})).To(Succeed())
-
-			By("Sending a message to the queue")
 			mockSQSClient.EXPECT().ReceiveMessage(
 				mock.Anything,
 				&sqs.ReceiveMessageInput{
@@ -100,6 +89,16 @@ var _ = Describe("Queue Controller", func() {
 				&sqs.DeleteMessageOutput{},
 				nil,
 			).Once()
+
+			By("Creating a Queue object")
+			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-queue-",
+				},
+				Spec: spothandlerv1.QueueSpec{
+					URL: sqsQueueURL,
+				},
+			})).To(Succeed())
 
 			By("Checking if a SpotInterruption resource is created")
 			var spotInterruption spothandlerv1.SpotInterruption
