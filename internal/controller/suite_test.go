@@ -24,12 +24,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/int128/spot-handler/internal/mocks/github.com/int128/spot-handler/internal_/awssqs"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/client-go/kubernetes/scheme"
 	ktesting "k8s.io/utils/clock/testing"
 	ctrl "sigs.k8s.io/controller-runtime"
-
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -43,11 +43,13 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var k8sClient client.Client
-var mockSQSClient mockSQSClientType
+var mockSQSClient *awssqs.MockClient
 var fakeNow = time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
+
+	mockSQSClient = awssqs.NewMockClient(t)
 
 	RunSpecs(t, "Controller Suite")
 }
@@ -95,7 +97,7 @@ var _ = BeforeSuite(func() {
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
 		Recorder:  mgr.GetEventRecorderFor("queue-controller"),
-		SQSClient: &mockSQSClient,
+		SQSClient: mockSQSClient,
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	Expect((&SpotInterruptionReconciler{

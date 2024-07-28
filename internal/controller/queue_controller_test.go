@@ -21,9 +21,11 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
 
@@ -34,6 +36,7 @@ var _ = Describe("Queue Controller", func() {
 	Context("When a message is received", func() {
 		It("should create a SpotInterruption resource", func() {
 			ctx := context.TODO()
+			const sqsQueueURL = "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue"
 
 			By("Creating a Queue object")
 			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
@@ -41,17 +44,24 @@ var _ = Describe("Queue Controller", func() {
 					GenerateName: "test-queue-",
 				},
 				Spec: spothandlerv1.QueueSpec{
-					URL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
+					URL: sqsQueueURL,
 				},
 			})).To(Succeed())
 
 			By("Sending a message to the queue")
-			mockSQSClient.reset(
-				"https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
-				[]sqstypes.Message{
-					// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
-					{
-						Body: aws.String(`{
+			mockSQSClient.EXPECT().ReceiveMessage(
+				mock.Anything,
+				&sqs.ReceiveMessageInput{
+					QueueUrl:            aws.String(sqsQueueURL),
+					MaxNumberOfMessages: 10,
+					WaitTimeSeconds:     10,
+				},
+			).Return(
+				&sqs.ReceiveMessageOutput{
+					Messages: []sqstypes.Message{
+						// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
+						{
+							Body: aws.String(`{
     "version": "0",
     "id": "12345678-1234-1234-1234-123456789012",
     "detail-type": "EC2 Spot Instance Interruption Warning",
@@ -65,10 +75,31 @@ var _ = Describe("Queue Controller", func() {
         "instance-action": "action"
     }
 }`),
-						ReceiptHandle: aws.String("ReceiptHandle-1"),
+							ReceiptHandle: aws.String("ReceiptHandle-1"),
+						},
 					},
-				})
-			Expect(mockSQSClient.messages).To(HaveLen(1))
+				},
+				nil,
+			).Once()
+			mockSQSClient.EXPECT().ReceiveMessage(
+				mock.Anything,
+				&sqs.ReceiveMessageInput{
+					QueueUrl:            aws.String(sqsQueueURL),
+					MaxNumberOfMessages: 10,
+					WaitTimeSeconds:     10,
+				},
+			).Return(&sqs.ReceiveMessageOutput{Messages: nil}, nil)
+
+			mockSQSClient.EXPECT().DeleteMessage(
+				mock.Anything,
+				&sqs.DeleteMessageInput{
+					QueueUrl:      aws.String(sqsQueueURL),
+					ReceiptHandle: aws.String("ReceiptHandle-1"),
+				},
+			).Return(
+				&sqs.DeleteMessageOutput{},
+				nil,
+			).Once()
 
 			By("Checking if a SpotInterruption resource is created")
 			var spotInterruption spothandlerv1.SpotInterruption
@@ -81,7 +112,6 @@ var _ = Describe("Queue Controller", func() {
 			Expect(spotInterruption.Spec.AvailabilityZone).To(Equal("us-east-2a"))
 
 			By("Checking if the message is deleted from the queue")
-			Expect(mockSQSClient.messages).To(BeEmpty())
 		})
 	})
 })
