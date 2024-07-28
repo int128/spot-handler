@@ -25,6 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/int128/spot-handler/internal/awssqs"
 	"github.com/int128/spot-handler/internal/spot"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,7 +42,7 @@ type QueueReconciler struct {
 	client.Client
 	Scheme    *runtime.Scheme
 	Recorder  record.EventRecorder
-	SQSClient SQSClient
+	SQSClient awssqs.Client
 }
 
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=queues,verbs=get;list;watch;create;update;patch;delete

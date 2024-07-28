@@ -1,0 +1,6 @@
+dir: internal/mocks/{{ replaceAll .PackagePath "internal" "internal_" }}
+
+packages:
+  github.com/int128/spot-handler/internal/awssqs:
+    interfaces:
+      Client:
