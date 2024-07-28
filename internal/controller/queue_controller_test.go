@@ -31,25 +31,27 @@ import (
 )
 
 var _ = Describe("Queue Controller", func() {
-	Context("When reconciling a resource", func() {
-		ctx := context.TODO()
+	Context("When a message is received", func() {
+		It("should create a SpotInterruption resource", func() {
+			ctx := context.TODO()
 
-		It("should successfully reconcile the resource", func() {
 			By("Creating a Queue object")
 			Expect(k8sClient.Create(ctx, &spothandlerv1.Queue{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-queue",
+					GenerateName: "test-queue-",
 				},
 				Spec: spothandlerv1.QueueSpec{
 					URL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
 				},
 			})).To(Succeed())
 
-			By("Reconciling the created resource")
-			Expect(mockSQSClient.messages).To(BeEmpty())
-			mockSQSClient.append(sqstypes.Message{
-				// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
-				Body: aws.String(`{
+			By("Sending a message to the queue")
+			mockSQSClient.reset(
+				"https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
+				[]sqstypes.Message{
+					// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
+					{
+						Body: aws.String(`{
     "version": "0",
     "id": "12345678-1234-1234-1234-123456789012",
     "detail-type": "EC2 Spot Instance Interruption Warning",
@@ -63,19 +65,22 @@ var _ = Describe("Queue Controller", func() {
         "instance-action": "action"
     }
 }`),
-			})
+						ReceiptHandle: aws.String("ReceiptHandle-1"),
+					},
+				})
+			Expect(mockSQSClient.messages).To(HaveLen(1))
 
+			By("Checking if a SpotInterruption resource is created")
 			var spotInterruption spothandlerv1.SpotInterruption
 			Eventually(func() error {
-				return k8sClient.Get(ctx,
-					ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &spotInterruption)
+				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &spotInterruption)
 			}).Should(Succeed())
 
-			Expect(spotInterruption.Spec.EventTimestamp.UTC()).To(Equal(
-				time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
+			Expect(spotInterruption.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
 			Expect(spotInterruption.Spec.InstanceID).To(Equal("i-1234567890abcdef0"))
 			Expect(spotInterruption.Spec.AvailabilityZone).To(Equal("us-east-2a"))
 
+			By("Checking if the message is deleted from the queue")
 			Expect(mockSQSClient.messages).To(BeEmpty())
 		})
 	})

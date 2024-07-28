@@ -31,10 +31,10 @@ import (
 
 var _ = Describe("SpotInterruption Controller", func() {
 	Context("When reconciling a resource", func() {
-		ctx := context.TODO()
-
 		It("should successfully reconcile the resource", func() {
-			By("Creating a Node object")
+			ctx := context.TODO()
+
+			By("Creating a Node resource")
 			fixtureNode := corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: "test-node-",
@@ -45,7 +45,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, &fixtureNode)).To(Succeed())
 
-			By("Creating a Pod object")
+			By("Creating a Pod resource")
 			fixturePod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: "test-pod-",
@@ -63,7 +63,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
 
-			By("Creating an SpotInterruption object")
+			By("Creating a SpotInterruption resource")
 			spotInterruption := spothandlerv1.SpotInterruption{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: "test-spotinterruption-",
@@ -76,23 +76,19 @@ var _ = Describe("SpotInterruption Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
 
-			By("Checking if the object is processed")
+			By("Checking if the resource is reconciled")
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)).To(Succeed())
 				g.Expect(spotInterruption.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 
-			Expect(spotInterruption.Status.Interrupted.Nodes).To(Equal([]spothandlerv1.InterruptedNode{
-				{
-					Name: fixtureNode.Name,
-				},
-			}))
-			Expect(spotInterruption.Status.Interrupted.Pods).To(Equal([]spothandlerv1.InterruptedPod{
-				{
-					Name:      fixturePod.Name,
-					Namespace: fixturePod.Namespace,
-				},
-			}))
+			Expect(spotInterruption.Status.Interrupted.Nodes).To(Equal([]spothandlerv1.InterruptedNode{{
+				Name: fixtureNode.Name,
+			}}))
+			Expect(spotInterruption.Status.Interrupted.Pods).To(Equal([]spothandlerv1.InterruptedPod{{
+				Name:      fixturePod.Name,
+				Namespace: fixturePod.Namespace,
+			}}))
 		})
 	})
 })
