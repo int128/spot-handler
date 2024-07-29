@@ -78,35 +78,41 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		wg.Add(1)
 		go func(i int, message sqstypes.Message) {
 			defer wg.Done()
-			spec, err := spot.Parse(aws.ToString(message.Body))
-			if err != nil {
-				logger.Info("Dropped an invalid message", "error", err, "body", aws.ToString(message.Body))
-				return
-			}
-			spotInterruption := spothandlerv1.SpotInterruption{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: spec.InstanceID,
-				},
-				Spec: *spec,
-			}
-			if err := ctrl.SetControllerReference(&queueObj, &spotInterruption, r.Scheme); err != nil {
+			if err := r.reconcileMessage(ctx, queueObj, message); err != nil {
 				errs[i] = err
-				return
-			}
-			if err := r.Client.Create(ctx, &spotInterruption); err != nil {
-				errs[i] = err
-				return
-			}
-			if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
-				QueueUrl:      aws.String(queueObj.Spec.URL),
-				ReceiptHandle: message.ReceiptHandle,
-			}); err != nil {
-				errs[i] = err
-				return
 			}
 		}(i, message)
 	}
 	return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, errors.Join(errs...)
+}
+
+func (r *QueueReconciler) reconcileMessage(ctx context.Context, queueObj spothandlerv1.Queue, message sqstypes.Message) error {
+	logger := log.FromContext(ctx)
+
+	spec, err := spot.Parse(aws.ToString(message.Body))
+	if err != nil {
+		logger.Info("Dropped an invalid message", "error", err, "body", aws.ToString(message.Body))
+		return nil
+	}
+	spotInterruption := spothandlerv1.SpotInterruption{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: spec.InstanceID,
+		},
+		Spec: *spec,
+	}
+	if err := ctrl.SetControllerReference(&queueObj, &spotInterruption, r.Scheme); err != nil {
+		return err
+	}
+	if err := r.Client.Create(ctx, &spotInterruption); err != nil {
+		return err
+	}
+	if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(queueObj.Spec.URL),
+		ReceiptHandle: message.ReceiptHandle,
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

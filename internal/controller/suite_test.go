@@ -101,7 +101,7 @@ var _ = BeforeSuite(func() {
 	Expect((&SpotInterruptionReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("ec2spotinstanceinterruptionwarning-controller"),
+		Recorder: mgr.GetEventRecorderFor("spotinterruption-controller"),
 		Clock:    ktesting.NewFakePassiveClock(fakeNow),
 	}).SetupWithManager(mgr)).To(Succeed())
 
