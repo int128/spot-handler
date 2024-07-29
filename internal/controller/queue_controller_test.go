@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	_ "embed"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -29,6 +30,12 @@ import (
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
+
+//go:embed testdata/instance1.json
+var messageInstance1 string
+
+//go:embed testdata/instance2.json
+var messageInstance2 string
 
 var _ = Describe("Queue Controller", func() {
 	Context("When a message is received", func() {
@@ -49,36 +56,36 @@ var _ = Describe("Queue Controller", func() {
 			mockSQSClient.reset(
 				"https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
 				[]sqstypes.Message{
-					// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
 					{
-						Body: aws.String(`{
-    "version": "0",
-    "id": "12345678-1234-1234-1234-123456789012",
-    "detail-type": "EC2 Spot Instance Interruption Warning",
-    "source": "aws.ec2",
-    "account": "123456789012",
-    "time": "2021-02-03T14:05:06Z",
-    "region": "us-east-2",
-    "resources": ["arn:aws:ec2:us-east-2a:instance/i-1234567890abcdef0"],
-    "detail": {
-        "instance-id": "i-1234567890abcdef0",
-        "instance-action": "action"
-    }
-}`),
+						Body:          aws.String(messageInstance1),
 						ReceiptHandle: aws.String("ReceiptHandle-1"),
 					},
+					{
+						Body:          aws.String(messageInstance2),
+						ReceiptHandle: aws.String("ReceiptHandle-2"),
+					},
 				})
-			Expect(mockSQSClient.messages).To(HaveLen(1))
+			Expect(mockSQSClient.messages).To(HaveLen(2))
 
-			By("Checking if a SpotInterruption resource is created")
-			var spotInterruption spothandlerv1.SpotInterruption
+			By("Checking if SpotInterruption resource #1 is created")
+			var spotInterruption1 spothandlerv1.SpotInterruption
 			Eventually(func() error {
-				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: "i-1234567890abcdef0"}, &spotInterruption)
+				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: "i-00000000000000001"}, &spotInterruption1)
 			}).Should(Succeed())
 
-			Expect(spotInterruption.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
-			Expect(spotInterruption.Spec.InstanceID).To(Equal("i-1234567890abcdef0"))
-			Expect(spotInterruption.Spec.AvailabilityZone).To(Equal("us-east-2a"))
+			Expect(spotInterruption1.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
+			Expect(spotInterruption1.Spec.InstanceID).To(Equal("i-00000000000000001"))
+			Expect(spotInterruption1.Spec.AvailabilityZone).To(Equal("us-east-2a"))
+
+			By("Checking if SpotInterruption resource #2 is created")
+			var spotInterruption2 spothandlerv1.SpotInterruption
+			Eventually(func() error {
+				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: "i-00000000000000002"}, &spotInterruption2)
+			}).Should(Succeed())
+
+			Expect(spotInterruption2.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
+			Expect(spotInterruption2.Spec.InstanceID).To(Equal("i-00000000000000002"))
+			Expect(spotInterruption2.Spec.AvailabilityZone).To(Equal("us-east-2b"))
 
 			By("Checking if the message is deleted from the queue")
 			Expect(mockSQSClient.messages).To(BeEmpty())

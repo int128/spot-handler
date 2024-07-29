@@ -1,6 +1,7 @@
 package spot
 
 import (
+	_ "embed"
 	"testing"
 	"time"
 
@@ -9,24 +10,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// An example message of spot interruption.
+// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
+//
+//go:embed testdata/message.json
+var messageJSON string
+
 func TestParse(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html
-		body := `{
-    "version": "0",
-    "id": "12345678-1234-1234-1234-123456789012",
-    "detail-type": "EC2 Spot Instance Interruption Warning",
-    "source": "aws.ec2",
-    "account": "123456789012",
-    "time": "2021-02-03T14:05:06Z",
-    "region": "us-east-2",
-    "resources": ["arn:aws:ec2:us-east-2a:instance/i-1234567890abcdef0"],
-    "detail": {
-        "instance-id": "i-1234567890abcdef0",
-        "instance-action": "action"
-    }
-}`
-		got, err := Parse(body)
+		got, err := Parse(messageJSON)
 		if err != nil {
 			t.Fatalf("Parse() error: %s", err)
 		}
