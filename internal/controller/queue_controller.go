@@ -30,15 +30,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
 // QueueReconciler reconciles a Queue object
 type QueueReconciler struct {
-	client.Client
+	ctrlclient.Client
 	Scheme    *runtime.Scheme
 	Recorder  record.EventRecorder
 	SQSClient SQSClient
@@ -51,11 +51,11 @@ type QueueReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := ctrllog.FromContext(ctx)
 
 	var queueObj spothandlerv1.Queue
 	if err := r.Get(ctx, req.NamespacedName, &queueObj); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, ctrlclient.IgnoreNotFound(err)
 	}
 
 	receiveMessageOutput, err := r.SQSClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
@@ -87,7 +87,7 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 
 func (r *QueueReconciler) reconcileMessage(ctx context.Context, queueObj spothandlerv1.Queue, message sqstypes.Message) error {
-	logger := log.FromContext(ctx)
+	logger := ctrllog.FromContext(ctx)
 
 	spec, err := spot.Parse(aws.ToString(message.Body))
 	if err != nil {
