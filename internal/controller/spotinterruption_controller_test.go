@@ -23,8 +23,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
@@ -89,6 +91,37 @@ var _ = Describe("SpotInterruption Controller", func() {
 				Name:      fixturePod.Name,
 				Namespace: fixturePod.Namespace,
 			}}))
+		})
+	})
+
+	Context("When the retention period is over", func() {
+		It("should delete the resource", func() {
+			ctx := context.TODO()
+
+			By("Creating a SpotInterruption resource")
+			spotInterruption := spothandlerv1.SpotInterruption{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-spotinterruption-",
+				},
+				Spec: spothandlerv1.SpotInterruptionSpec{
+					EventTimestamp:   metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
+					InstanceID:       "i-00000000000000002",
+					AvailabilityZone: "us-east-2a",
+				},
+			}
+			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
+
+			By("Updating the resource to be reconciled at before the retention period")
+			patch := ctrlclient.MergeFrom(&spotInterruption)
+			spotInterruption.Status.ReconciledAt = metav1.Date(2021, 6, 30, 0, 0, 0, 0, time.UTC)
+			Expect(k8sClient.Patch(ctx, &spotInterruption, patch)).To(Succeed())
+
+			By("Checking if the resource is deleted")
+			Eventually(func(g Gomega) {
+				err := k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)
+				g.Expect(err).To(HaveOccurred())
+				g.Expect(kerrors.IsNotFound(err)).To(BeTrue())
+			})
 		})
 	})
 })

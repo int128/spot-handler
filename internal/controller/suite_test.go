@@ -44,7 +44,7 @@ import (
 
 var k8sClient client.Client
 var mockSQSClient mockSQSClientType
-var fakeNow = time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)
+var fakeNow = time.Date(2021, 7, 1, 1, 1, 1, 0, time.UTC)
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)

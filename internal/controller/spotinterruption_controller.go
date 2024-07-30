@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,8 @@ const (
 	nodeProviderIDField = ".spec.providerID"
 	podNodeNameField    = ".spec.nodeName"
 )
+
+const spotInterruptionRetentionPeriod = 24 * time.Hour
 
 // SpotInterruptionReconciler reconciles a SpotInterruption object
 type SpotInterruptionReconciler struct {
@@ -63,9 +66,19 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
 	if !obj.Status.ReconciledAt.IsZero() {
+		expiry := obj.Status.ReconciledAt.Add(spotInterruptionRetentionPeriod)
+		if r.Clock.Now().After(expiry) {
+			if err := r.Client.Delete(ctx, &obj); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to delete an expired SpotInterruption: %w", err)
+			}
+			logger.Info("Deleted an expired SpotInterruption", "reconciledAt", obj.Status.ReconciledAt.Format(time.RFC3339))
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, nil
 	}
+
 	if result, err := r.reconcilePods(ctx, &obj); err != nil {
 		return result, err
 	}
