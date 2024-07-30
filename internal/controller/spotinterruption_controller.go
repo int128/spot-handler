@@ -27,8 +27,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
@@ -42,7 +42,7 @@ const spotInterruptionRetentionPeriod = 24 * time.Hour
 
 // SpotInterruptionReconciler reconciles a SpotInterruption object
 type SpotInterruptionReconciler struct {
-	client.Client
+	ctrlclient.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 	Clock    clock.PassiveClock
@@ -60,11 +60,11 @@ type SpotInterruptionReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := ctrllog.FromContext(ctx)
 
 	var obj spothandlerv1.SpotInterruption
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, ctrlclient.IgnoreNotFound(err)
 	}
 
 	if !obj.Status.ReconciledAt.IsZero() {
@@ -92,11 +92,11 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 }
 
 func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spothandlerv1.SpotInterruption) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := ctrllog.FromContext(ctx)
 
 	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
 	var nodeList corev1.NodeList
-	if err := r.List(ctx, &nodeList, client.MatchingFields{nodeProviderIDField: nodeProviderID}); err != nil {
+	if err := r.List(ctx, &nodeList, ctrlclient.MatchingFields{nodeProviderIDField: nodeProviderID}); err != nil {
 		return ctrl.Result{}, err
 	}
 	if len(nodeList.Items) == 0 {
@@ -110,7 +110,7 @@ func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spo
 			node.Name, obj.Spec.InstanceID, obj.Spec.AvailabilityZone)
 
 		var podList corev1.PodList
-		if err := r.List(ctx, &podList, client.MatchingFields{podNodeNameField: node.Name}); err != nil {
+		if err := r.List(ctx, &podList, ctrlclient.MatchingFields{podNodeNameField: node.Name}); err != nil {
 			return ctrl.Result{}, err
 		}
 		for _, pod := range podList.Items {
@@ -138,7 +138,7 @@ func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spo
 // SetupWithManager sets up the controller with the Manager.
 func (r *SpotInterruptionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, nodeProviderIDField,
-		func(obj client.Object) []string {
+		func(obj ctrlclient.Object) []string {
 			node := obj.(*corev1.Node)
 			if node.Spec.ProviderID == "" {
 				return nil
@@ -150,7 +150,7 @@ func (r *SpotInterruptionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, podNodeNameField,
-		func(obj client.Object) []string {
+		func(obj ctrlclient.Object) []string {
 			pod := obj.(*corev1.Pod)
 			if pod.Spec.NodeName == "" {
 				return nil
