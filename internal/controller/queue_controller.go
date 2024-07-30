@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -64,13 +65,13 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		WaitTimeSeconds:     10,
 	})
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("failed to receive messages from SQS: %w", err)
 	}
 	messages := receiveMessageOutput.Messages
 	if len(messages) == 0 {
 		return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, nil
 	}
-	logger.Info("Received message", "count", len(messages))
+	logger.Info("Received messages", "count", len(messages))
 
 	var wg sync.WaitGroup
 	errs := make([]error, len(messages))
@@ -101,16 +102,16 @@ func (r *QueueReconciler) reconcileMessage(ctx context.Context, queueObj spothan
 		Spec: *spec,
 	}
 	if err := ctrl.SetControllerReference(&queueObj, &spotInterruption, r.Scheme); err != nil {
-		return err
+		return fmt.Errorf("failed to set the controller reference from Queue to SpotInterruption: %w", err)
 	}
 	if err := r.Client.Create(ctx, &spotInterruption); err != nil {
-		return err
+		return fmt.Errorf("failed to create a SpotInterruption: %w", err)
 	}
 	if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(queueObj.Spec.URL),
 		ReceiptHandle: message.ReceiptHandle,
 	}); err != nil {
-		return err
+		return fmt.Errorf("failed to delete the message from SQS: %w", err)
 	}
 	return nil
 }
