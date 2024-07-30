@@ -84,7 +84,7 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 	obj.Status.ReconciledAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Status().Update(ctx, &obj); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("failed to update the status of SpotInterruption: %w", err)
 	}
 
 	logger.Info("Successfully reconciled SpotInterruption")
@@ -97,7 +97,7 @@ func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spo
 	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
 	var nodeList corev1.NodeList
 	if err := r.List(ctx, &nodeList, ctrlclient.MatchingFields{nodeProviderIDField: nodeProviderID}); err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("failed to find Nodes: %w", err)
 	}
 	if len(nodeList.Items) == 0 {
 		logger.Info("Node does not exist", "providerID", nodeProviderID)
@@ -111,7 +111,7 @@ func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spo
 
 		var podList corev1.PodList
 		if err := r.List(ctx, &podList, ctrlclient.MatchingFields{podNodeNameField: node.Name}); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("failed to find Pods: %w", err)
 		}
 		for _, pod := range podList.Items {
 			r.Recorder.Eventf(&pod, corev1.EventTypeWarning, "SpotInterrupted",
@@ -146,7 +146,7 @@ func (r *SpotInterruptionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return []string{node.Spec.ProviderID}
 		},
 	); err != nil {
-		return fmt.Errorf("could not create an index for field %s: %w", nodeProviderIDField, err)
+		return fmt.Errorf("failed to create an index for field %s: %w", nodeProviderIDField, err)
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, podNodeNameField,
@@ -158,7 +158,7 @@ func (r *SpotInterruptionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return []string{pod.Spec.NodeName}
 		},
 	); err != nil {
-		return fmt.Errorf("could not create an index for field %s: %w", podNodeNameField, err)
+		return fmt.Errorf("failed to create an index for field %s: %w", podNodeNameField, err)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

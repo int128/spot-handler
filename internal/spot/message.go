@@ -38,7 +38,7 @@ func Parse(body string) (*spothandlerv1.SpotInterruptionSpec, error) {
 	}
 	availabilityZone, err := parseAvailabilityZone(msg.Resources[0])
 	if err != nil {
-		return nil, fmt.Errorf("could not parse the availability zone: %w", err)
+		return nil, fmt.Errorf("failed to parse the availability zone: %w", err)
 	}
 
 	return &spothandlerv1.SpotInterruptionSpec{
