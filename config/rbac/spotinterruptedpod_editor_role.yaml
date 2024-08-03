@@ -1,0 +1,27 @@
+# permissions for end users to edit spotinterruptedpods.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: spot-handler
+    app.kubernetes.io/managed-by: kustomize
+  name: spotinterruptedpod-editor-role
+rules:
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptedpods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptedpods/status
+  verbs:
+  - get

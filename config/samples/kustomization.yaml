@@ -2,4 +2,5 @@
 resources:
 - spothandler_v1_queue.yaml
 - spothandler_v1_spotinterruption.yaml
+- spothandler_v1_spotinterruptedpod.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples
