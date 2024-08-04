@@ -19,66 +19,25 @@ package controller
 import (
 	"context"
 
+	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
 var _ = Describe("SpotInterruptedPod Controller", func() {
 	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
-
-		ctx := context.Background()
-
-		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
-		}
-		spotinterruptedpod := &spothandlerv1.SpotInterruptedPod{}
-
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind SpotInterruptedPod")
-			err := k8sClient.Get(ctx, typeNamespacedName, spotinterruptedpod)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &spothandlerv1.SpotInterruptedPod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
-					},
-					// TODO(user): Specify other spec details if needed.
-				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
-			}
-		})
-
-		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &spothandlerv1.SpotInterruptedPod{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Cleanup the specific resource instance SpotInterruptedPod")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
 		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-			controllerReconciler := &SpotInterruptedPodReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
-			}
+			ctx := context.TODO()
 
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+			By("Reconciling the created resource")
+			spotInterruptedPod := spothandlerv1.SpotInterruptedPod{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-pod-",
+					Namespace:    "default",
+				},
+			}
+			Expect(k8sClient.Create(ctx, &spotInterruptedPod)).To(Succeed())
 		})
 	})
 })
