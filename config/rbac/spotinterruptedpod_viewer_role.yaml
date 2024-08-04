@@ -1,0 +1,23 @@
+# permissions for end users to view spotinterruptedpods.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: spot-handler
+    app.kubernetes.io/managed-by: kustomize
+  name: spotinterruptedpod-viewer-role
+rules:
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptedpods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptedpods/status
+  verbs:
+  - get
