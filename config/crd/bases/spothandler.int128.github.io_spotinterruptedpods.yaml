@@ -4,20 +4,21 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: spotinterruptions.spothandler.int128.github.io
+  name: spotinterruptedpods.spothandler.int128.github.io
 spec:
   group: spothandler.int128.github.io
   names:
-    kind: SpotInterruption
-    listKind: SpotInterruptionList
-    plural: spotinterruptions
-    singular: spotinterruption
-  scope: Cluster
+    kind: SpotInterruptedPod
+    listKind: SpotInterruptedPodList
+    plural: spotinterruptedpods
+    singular: spotinterruptedpod
+  scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: SpotInterruption is the Schema for the spotinterruptions API
+        description: SpotInterruptedPod is the Schema for the spotinterruptedpods
+          API
         properties:
           apiVersion:
             description: |-
@@ -37,25 +38,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: SpotInterruptionSpec represents an EC2SpotInstanceInterruptionWarning
-              event.
-            properties:
-              availabilityZone:
-                type: string
-              eventTimestamp:
-                format: date-time
-                type: string
-              instanceID:
-                type: string
+            description: SpotInterruptedPodSpec represents a Pod affected by SpotInterruption
             type: object
           status:
-            description: SpotInterruptionStatus defines the observed state of SpotInterruption
-            properties:
-              reconciledAt:
-                description: Timestamp at which the SpotInterruption was reconciled
-                  successfully.
-                format: date-time
-                type: string
+            description: SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod
             type: object
         type: object
     served: true

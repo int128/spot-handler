@@ -78,19 +78,18 @@ var _ = Describe("SpotInterruption Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
 
-			By("Checking if the resource is reconciled")
+			By("Checking if SpotInterruption is reconciled")
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)).To(Succeed())
 				g.Expect(spotInterruption.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 
-			Expect(spotInterruption.Status.Interrupted.Nodes).To(Equal([]spothandlerv1.InterruptedNode{{
-				Name: fixtureNode.Name,
-			}}))
-			Expect(spotInterruption.Status.Interrupted.Pods).To(Equal([]spothandlerv1.InterruptedPod{{
-				Name:      fixturePod.Name,
-				Namespace: fixturePod.Namespace,
-			}}))
+			By("Checking if SpotInterruptedPod is created")
+			var spotInterruptedPod spothandlerv1.SpotInterruptedPod
+			Eventually(func() error {
+				return k8sClient.Get(ctx,
+					ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &spotInterruptedPod)
+			}).Should(Succeed())
 		})
 	})
 

@@ -56,6 +56,32 @@ rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
+  - spotinterruptedpods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptedpods/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - spotinterruptedpods/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
   - spotinterruptions
   verbs:
   - create

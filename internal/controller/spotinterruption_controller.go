@@ -79,7 +79,7 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, nil
 	}
 
-	if result, err := r.reconcilePods(ctx, &obj); err != nil {
+	if result, err := r.reconcilePods(ctx, obj); err != nil {
 		return result, err
 	}
 	obj.Status.ReconciledAt = metav1.NewTime(r.Clock.Now())
@@ -91,7 +91,7 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return ctrl.Result{}, nil
 }
 
-func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spothandlerv1.SpotInterruption) (ctrl.Result, error) {
+func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj spothandlerv1.SpotInterruption) (ctrl.Result, error) {
 	logger := ctrllog.FromContext(ctx)
 
 	nodeProviderID := fmt.Sprintf("aws:///%s/%s", obj.Spec.AvailabilityZone, obj.Spec.InstanceID)
@@ -118,19 +118,19 @@ func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spo
 				"SpotInterrupted: Pod %s, Node %s, Instance %s in %s",
 				pod.Name, node.Name, obj.Spec.InstanceID, obj.Spec.AvailabilityZone)
 
-			//if err := r.Delete(ctx, &pod); err != nil {
-			//	return err
-			//}
-
-			obj.Status.Interrupted.Pods = append(obj.Status.Interrupted.Pods, spothandlerv1.InterruptedPod{
-				Name:      pod.Name,
-				Namespace: pod.Namespace,
-			})
+			spotInterruptedPod := spothandlerv1.SpotInterruptedPod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pod.Name,
+					Namespace: pod.Namespace,
+				},
+			}
+			if err := ctrl.SetControllerReference(&obj, &spotInterruptedPod, r.Scheme); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to set the controller reference from SpotInterruption to SpotInterruptedPod: %w", err)
+			}
+			if err := r.Create(ctx, &spotInterruptedPod); err != nil {
+				return ctrl.Result{}, ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create SpotInterruptedPod: %w", err))
+			}
 		}
-
-		obj.Status.Interrupted.Nodes = append(obj.Status.Interrupted.Nodes, spothandlerv1.InterruptedNode{
-			Name: node.Name,
-		})
 	}
 	return ctrl.Result{}, nil
 }
