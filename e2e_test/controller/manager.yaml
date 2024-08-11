@@ -10,7 +10,7 @@ spec:
         - name: manager
           env:
             - name: AWS_ENDPOINT_URL
-              value: http://localstack.localstack.svc.cluster.local:4566
+              value: http://localstack.default.svc.cluster.local:4566
             - name: AWS_REGION
               value: us-west-2
             - name: AWS_ACCESS_KEY_ID
