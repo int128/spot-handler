@@ -25,12 +25,19 @@ import (
 type SpotInterruptedPodSpec struct {
 	// Pod refers to the Pod affected by SpotInterruption
 	Pod corev1.LocalObjectReference `json:"pod,omitempty"`
+
+	// Node refers to the Node affected by SpotInterruption
+	Node corev1.LocalObjectReference `json:"node,omitempty"`
+
+	// InstanceID refers to the instance ID of the Node affected by SpotInterruption
+	InstanceID string `json:"instanceID,omitempty"`
 }
 
 // SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod
 type SpotInterruptedPodStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Timestamp at which the SpotInterruptedPod was reconciled successfully.
+	// +optional
+	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -64,7 +64,8 @@ var _ = Describe("SpotInterruptedNode Controller", func() {
 					GenerateName: "test-spotinterruptednode-",
 				},
 				Spec: spothandlerv1.SpotInterruptedNodeSpec{
-					Node: corev1.LocalObjectReference{Name: fixtureNode.Name},
+					Node:       corev1.LocalObjectReference{Name: fixtureNode.Name},
+					InstanceID: "i-1234567890abcdef0",
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruptedNode)).To(Succeed())

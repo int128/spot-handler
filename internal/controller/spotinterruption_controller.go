@@ -24,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,9 +39,8 @@ const spotInterruptionRetentionPeriod = 24 * time.Hour
 // SpotInterruptionReconciler reconciles a SpotInterruption object
 type SpotInterruptionReconciler struct {
 	ctrlclient.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
-	Clock    clock.PassiveClock
+	Scheme *runtime.Scheme
+	Clock  clock.PassiveClock
 }
 
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptions,verbs=get;list;watch;create;update;patch;delete
@@ -112,7 +110,8 @@ func (r *SpotInterruptionReconciler) createSpotInterruptedNode(ctx context.Conte
 			Name: node.Name,
 		},
 		Spec: spothandlerv1.SpotInterruptedNodeSpec{
-			Node: corev1.LocalObjectReference{Name: node.Name},
+			Node:       corev1.LocalObjectReference{Name: node.Name},
+			InstanceID: obj.Spec.InstanceID,
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedNode, r.Scheme); err != nil {

@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/reference"
 	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,7 +68,6 @@ func (r *SpotInterruptedNodeReconciler) Reconcile(ctx context.Context, req ctrl.
 	if err := r.Status().Update(ctx, &obj); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to update the status of SpotInterruptedNode: %w", err)
 	}
-	// TODO: emit an event
 	logger.Info("Successfully reconciled SpotInterruptedNode")
 	return ctrl.Result{}, nil
 }
@@ -79,8 +79,11 @@ func (r *SpotInterruptedNodeReconciler) reconcile(ctx context.Context, obj spoth
 	}
 	for _, pod := range podList.Items {
 		if err := r.createSpotInterruptedPod(ctx, obj, pod); err != nil {
-			return fmt.Errorf("failed to create SpotInterruptedPod: %w", err)
+			return err
 		}
+	}
+	if err := r.createEvent(ctx, obj); err != nil {
+		return err
 	}
 	return nil
 }
@@ -92,7 +95,9 @@ func (r *SpotInterruptedNodeReconciler) createSpotInterruptedPod(ctx context.Con
 			Namespace: pod.Namespace,
 		},
 		Spec: spothandlerv1.SpotInterruptedPodSpec{
-			Pod: corev1.LocalObjectReference{Name: pod.Name},
+			Pod:        corev1.LocalObjectReference{Name: pod.Name},
+			Node:       corev1.LocalObjectReference{Name: obj.Spec.Node.Name},
+			InstanceID: obj.Spec.InstanceID,
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedPod, r.Scheme); err != nil {
@@ -100,6 +105,45 @@ func (r *SpotInterruptedNodeReconciler) createSpotInterruptedPod(ctx context.Con
 	}
 	if err := r.Create(ctx, &spotInterruptedPod); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create SpotInterruptedPod: %w", err))
+	}
+	return nil
+}
+
+func (r *SpotInterruptedNodeReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedNode) error {
+	var node corev1.Node
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Node.Name}, &node); err != nil {
+		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Node: %w", err))
+	}
+	ref, err := reference.GetReference(r.Scheme, &node)
+	if err != nil {
+		return fmt.Errorf("failed to get the reference of the Node: %w", err)
+	}
+	// We emit an event without the EventRecorder because:
+	//  - Set the Host field.
+	//  - Emit an event exactly once.
+	source := corev1.EventSource{
+		Component: "spotinterruptednode-controller",
+		Host:      node.Name,
+	}
+	t := metav1.NewTime(r.Clock.Now())
+	event := corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("spotinterruptednode-%s", obj.Name),
+			Namespace: metav1.NamespaceDefault,
+		},
+		Source:              source,
+		ReportingController: source.Component,
+		ReportingInstance:   source.Host,
+		InvolvedObject:      *ref,
+		FirstTimestamp:      t,
+		LastTimestamp:       t,
+		Count:               1,
+		Type:                corev1.EventTypeWarning,
+		Reason:              "SpotInterrupted",
+		Message:             fmt.Sprintf("Node %s, Instance %s was interrupted", obj.Spec.Node.Name, obj.Spec.InstanceID),
+	}
+	if err := r.Create(ctx, &event); err != nil {
+		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create an Event: %w", err))
 	}
 	return nil
 }

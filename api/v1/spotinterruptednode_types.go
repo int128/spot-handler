@@ -25,6 +25,9 @@ import (
 type SpotInterruptedNodeSpec struct {
 	// Node refers to the Node affected by SpotInterruption
 	Node corev1.LocalObjectReference `json:"node,omitempty"`
+
+	// InstanceID refers to the instance ID of the Node affected by SpotInterruption
+	InstanceID string `json:"instanceID,omitempty"`
 }
 
 // SpotInterruptedNodeStatus defines the observed state of SpotInterruptedNode

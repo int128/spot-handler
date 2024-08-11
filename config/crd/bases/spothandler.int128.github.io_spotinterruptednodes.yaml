@@ -40,6 +40,10 @@ spec:
           spec:
             description: SpotInterruptedNodeSpec defines the desired state of SpotInterruptedNode
             properties:
+              instanceID:
+                description: InstanceID refers to the instance ID of the Node affected
+                  by SpotInterruption
+                type: string
               node:
                 description: Node refers to the Node affected by SpotInterruption
                 properties:

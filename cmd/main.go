@@ -138,18 +138,15 @@ func main() {
 	if err = (&controller.QueueReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("queue-controller"),
 		SQSClient: sqsClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Queue")
 		os.Exit(1)
 	}
-
 	if err = (&controller.SpotInterruptionReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("spotinterruption-controller"),
-		Clock:    clock.RealClock{},
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Clock:  clock.RealClock{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SpotInterruption")
 		os.Exit(1)
@@ -165,6 +162,7 @@ func main() {
 	if err = (&controller.SpotInterruptedPodReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Clock:  clock.RealClock{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SpotInterruptedPod")
 		os.Exit(1)

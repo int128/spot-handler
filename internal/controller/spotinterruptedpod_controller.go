@@ -18,19 +18,25 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/reference"
+	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
 
 // SpotInterruptedPodReconciler reconciles a SpotInterruptedPod object
 type SpotInterruptedPodReconciler struct {
-	client.Client
+	ctrlclient.Client
 	Scheme *runtime.Scheme
+	Clock  clock.PassiveClock
 }
 
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptedpods,verbs=get;list;watch;create;update;patch;delete
@@ -42,11 +48,71 @@ type SpotInterruptedPodReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *SpotInterruptedPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := ctrllog.FromContext(ctx)
 
-	// TODO: emit an event
+	var obj spothandlerv1.SpotInterruptedPod
+	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
+		return ctrl.Result{}, ctrlclient.IgnoreNotFound(err)
+	}
+	if !obj.Status.ReconciledAt.IsZero() {
+		return ctrl.Result{}, nil
+	}
 
+	if err := r.reconcile(ctx, obj); err != nil {
+		return ctrl.Result{}, err
+	}
+	obj.Status.ReconciledAt = metav1.NewTime(r.Clock.Now())
+	if err := r.Status().Update(ctx, &obj); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to update the status of SpotInterruptedPod: %w", err)
+	}
+	logger.Info("Successfully reconciled SpotInterruptedPod")
 	return ctrl.Result{}, nil
+}
+
+func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spothandlerv1.SpotInterruptedPod) error {
+	if err := r.createEvent(ctx, obj); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod) error {
+	var pod corev1.Pod
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Pod.Name, Namespace: obj.Namespace}, &pod); err != nil {
+		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Pod: %w", err))
+	}
+	ref, err := reference.GetReference(r.Scheme, &pod)
+	if err != nil {
+		return fmt.Errorf("failed to get the reference of the Pod: %w", err)
+	}
+	// We emit an event without the EventRecorder because:
+	//  - Set the Host field.
+	//  - Emit an event exactly once.
+	source := corev1.EventSource{
+		Component: "spotinterruptedpod-controller",
+		Host:      obj.Spec.Node.Name,
+	}
+	t := metav1.NewTime(r.Clock.Now())
+	event := corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("spotinterruptedpod-%s", obj.Name),
+			Namespace: obj.Namespace,
+		},
+		Source:              source,
+		ReportingController: source.Component,
+		ReportingInstance:   source.Host,
+		InvolvedObject:      *ref,
+		FirstTimestamp:      t,
+		LastTimestamp:       t,
+		Count:               1,
+		Type:                corev1.EventTypeWarning,
+		Reason:              "SpotInterrupted",
+		Message:             fmt.Sprintf("Pod %s, Node %s, Instance %s was interrupted", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID),
+	}
+	if err := r.Create(ctx, &event); err != nil {
+		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create Event: %w", err))
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

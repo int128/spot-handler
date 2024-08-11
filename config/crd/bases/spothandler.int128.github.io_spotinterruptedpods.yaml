@@ -40,6 +40,26 @@ spec:
           spec:
             description: SpotInterruptedPodSpec represents a Pod affected by SpotInterruption
             properties:
+              instanceID:
+                description: InstanceID refers to the instance ID of the Node affected
+                  by SpotInterruption
+                type: string
+              node:
+                description: Node refers to the Node affected by SpotInterruption
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               pod:
                 description: Pod refers to the Pod affected by SpotInterruption
                 properties:
@@ -59,6 +79,12 @@ spec:
             type: object
           status:
             description: SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod
+            properties:
+              reconciledAt:
+                description: Timestamp at which the SpotInterruptedPod was reconciled
+                  successfully.
+                format: date-time
+                type: string
             type: object
         type: object
     served: true
