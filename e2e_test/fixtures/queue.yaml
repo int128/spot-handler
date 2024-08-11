@@ -3,4 +3,4 @@ kind: Queue
 metadata:
   name: fixture-queue
 spec:
-  url: http://localhost:4566/000000000000/spot-handler-e2e
+  url: http://localstack.default.svc.cluster.local:4566/000000000000/spot-handler-e2e
