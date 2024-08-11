@@ -24,4 +24,21 @@ resources:
   kind: SpotInterruption
   path: github.com/int128/spot-handler/api/v1
   version: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: int128.github.io
+  group: spothandler
+  kind: SpotInterruptedNode
+  path: github.com/int128/spot-handler/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: int128.github.io
+  group: spothandler
+  kind: SpotInterruptedPod
+  path: github.com/int128/spot-handler/api/v1
+  version: v1
 version: "3"

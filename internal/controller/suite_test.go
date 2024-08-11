@@ -93,15 +93,25 @@ var _ = BeforeSuite(func() {
 	Expect((&QueueReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("queue-controller"),
 		SQSClient: &mockSQSClient,
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	Expect((&SpotInterruptionReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("spotinterruption-controller"),
-		Clock:    ktesting.NewFakePassiveClock(fakeNow),
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Clock:  ktesting.NewFakePassiveClock(fakeNow),
+	}).SetupWithManager(mgr)).To(Succeed())
+
+	Expect((&SpotInterruptedNodeReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Clock:  ktesting.NewFakePassiveClock(fakeNow),
+	}).SetupWithManager(mgr)).To(Succeed())
+
+	Expect((&SpotInterruptedPodReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Clock:  ktesting.NewFakePassiveClock(fakeNow),
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	ctx, cancel := context.WithCancel(context.TODO())

@@ -29,7 +29,6 @@ import (
 	"github.com/int128/spot-handler/internal/spot"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -41,7 +40,6 @@ import (
 type QueueReconciler struct {
 	ctrlclient.Client
 	Scheme    *runtime.Scheme
-	Recorder  record.EventRecorder
 	SQSClient SQSClient
 }
 
