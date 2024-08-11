@@ -53,6 +53,7 @@ type InterruptedNode struct {
 type InterruptedPod struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
+	DaemonSet bool   `json:"daemonSet,omitempty"`
 }
 
 // +kubebuilder:object:root=true
