@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -114,6 +115,11 @@ func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spo
 			return ctrl.Result{}, fmt.Errorf("failed to find Pods: %w", err)
 		}
 		for _, pod := range podList.Items {
+			isDaemonSetPod := slices.ContainsFunc(pod.OwnerReferences,
+				func(owner metav1.OwnerReference) bool {
+					return owner.APIVersion == "apps/v1" && owner.Kind == "DaemonSet"
+				})
+
 			r.Recorder.Eventf(&pod, corev1.EventTypeWarning, "SpotInterrupted",
 				"SpotInterrupted: Pod %s, Node %s, Instance %s in %s",
 				pod.Name, node.Name, obj.Spec.InstanceID, obj.Spec.AvailabilityZone)
@@ -125,6 +131,7 @@ func (r *SpotInterruptionReconciler) reconcilePods(ctx context.Context, obj *spo
 			obj.Status.Interrupted.Pods = append(obj.Status.Interrupted.Pods, spothandlerv1.InterruptedPod{
 				Name:      pod.Name,
 				Namespace: pod.Namespace,
+				DaemonSet: isDaemonSetPod,
 			})
 		}
 

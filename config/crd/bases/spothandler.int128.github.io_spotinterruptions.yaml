@@ -68,6 +68,8 @@ spec:
                       description: InterruptedPod defines the observed state of interrupted
                         pod
                       properties:
+                        daemonSet:
+                          type: boolean
                         name:
                           type: string
                         namespace:
