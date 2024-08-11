@@ -25,3 +25,5 @@ go.work
 *.swp
 *.swo
 *~
+
+e2e_test/output/

@@ -1,2 +1,7 @@
 resources:
   - ../../config/default
+  - node.yaml
+  - queue.yaml
+  - localstack.yaml
+patches:
+  - path: manager.yaml
