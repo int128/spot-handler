@@ -104,6 +104,17 @@ var _ = BeforeSuite(func() {
 		Clock:    ktesting.NewFakePassiveClock(fakeNow),
 	}).SetupWithManager(mgr)).To(Succeed())
 
+	Expect((&SpotInterruptedNodeReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Clock:  ktesting.NewFakePassiveClock(fakeNow),
+	}).SetupWithManager(mgr)).To(Succeed())
+
+	Expect((&SpotInterruptedPodReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr)).To(Succeed())
+
 	ctx, cancel := context.WithCancel(context.TODO())
 	DeferCleanup(func() {
 		cancel()

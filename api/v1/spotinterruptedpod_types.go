@@ -17,11 +17,14 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SpotInterruptedPodSpec represents a Pod affected by SpotInterruption
 type SpotInterruptedPodSpec struct {
+	// Pod refers to the Pod affected by SpotInterruption
+	Pod corev1.LocalObjectReference `json:"pod,omitempty"`
 }
 
 // SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod

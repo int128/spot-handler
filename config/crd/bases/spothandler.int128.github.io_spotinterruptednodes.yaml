@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: spotinterruptedpods.spothandler.int128.github.io
+  name: spotinterruptednodes.spothandler.int128.github.io
 spec:
   group: spothandler.int128.github.io
   names:
-    kind: SpotInterruptedPod
-    listKind: SpotInterruptedPodList
-    plural: spotinterruptedpods
-    singular: spotinterruptedpod
-  scope: Namespaced
+    kind: SpotInterruptedNode
+    listKind: SpotInterruptedNodeList
+    plural: spotinterruptednodes
+    singular: spotinterruptednode
+  scope: Cluster
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: SpotInterruptedPod is the Schema for the spotinterruptedpods
+        description: SpotInterruptedNode is the Schema for the spotinterruptednodes
           API
         properties:
           apiVersion:
@@ -38,10 +38,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: SpotInterruptedPodSpec represents a Pod affected by SpotInterruption
+            description: SpotInterruptedNodeSpec defines the desired state of SpotInterruptedNode
             properties:
-              pod:
-                description: Pod refers to the Pod affected by SpotInterruption
+              node:
+                description: Node refers to the Node affected by SpotInterruption
                 properties:
                   name:
                     default: ""
@@ -58,7 +58,13 @@ spec:
                 x-kubernetes-map-type: atomic
             type: object
           status:
-            description: SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod
+            description: SpotInterruptedNodeStatus defines the observed state of SpotInterruptedNode
+            properties:
+              reconciledAt:
+                description: Timestamp at which the SpotInterruptedNode was reconciled
+                  successfully.
+                format: date-time
+                type: string
             type: object
         type: object
     served: true

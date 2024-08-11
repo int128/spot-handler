@@ -82,11 +82,10 @@ var _ = Describe("SpotInterruption Controller", func() {
 				g.Expect(spotInterruption.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 
-			By("Checking if SpotInterruptedPod is created")
-			var spotInterruptedPod spothandlerv1.SpotInterruptedPod
+			By("Checking if SpotInterruptedNode is created")
+			var spotInterruptedNode spothandlerv1.SpotInterruptedNode
 			Eventually(func() error {
-				return k8sClient.Get(ctx,
-					ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &spotInterruptedPod)
+				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixtureNode.Name}, &spotInterruptedNode)
 			}).Should(Succeed())
 		})
 	})

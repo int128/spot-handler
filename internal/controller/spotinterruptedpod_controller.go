@@ -37,12 +37,14 @@ type SpotInterruptedPodReconciler struct {
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptedpods/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptedpods/finalizers,verbs=update
 
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *SpotInterruptedPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO: delete the Pod if the policy condition is met
+	// TODO: emit an event
 
 	return ctrl.Result{}, nil
 }

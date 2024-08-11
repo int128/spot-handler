@@ -17,25 +17,21 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // SpotInterruptedNodeSpec defines the desired state of SpotInterruptedNode
 type SpotInterruptedNodeSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of SpotInterruptedNode. Edit spotinterruptednode_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Node refers to the Node affected by SpotInterruption
+	Node corev1.LocalObjectReference `json:"node,omitempty"`
 }
 
 // SpotInterruptedNodeStatus defines the observed state of SpotInterruptedNode
 type SpotInterruptedNodeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Timestamp at which the SpotInterruptedNode was reconciled successfully.
+	// +optional
+	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
 }
 
 // +kubebuilder:object:root=true

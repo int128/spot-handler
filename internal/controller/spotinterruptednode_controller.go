@@ -18,44 +18,106 @@ package controller
 
 import (
 	"context"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"fmt"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/clock"
+	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+const podNodeNameField = ".spec.nodeName"
 
 // SpotInterruptedNodeReconciler reconciles a SpotInterruptedNode object
 type SpotInterruptedNodeReconciler struct {
-	client.Client
+	ctrlclient.Client
 	Scheme *runtime.Scheme
+	Clock  clock.PassiveClock
 }
 
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptednodes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptednodes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptednodes/finalizers,verbs=update
 
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the SpotInterruptedNode object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *SpotInterruptedNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := ctrllog.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var obj spothandlerv1.SpotInterruptedNode
+	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
+		return ctrl.Result{}, ctrlclient.IgnoreNotFound(err)
+	}
+	if !obj.Status.ReconciledAt.IsZero() {
+		return ctrl.Result{}, nil
+	}
 
+	if err := r.reconcile(ctx, obj); err != nil {
+		return ctrl.Result{}, err
+	}
+	obj.Status.ReconciledAt = metav1.NewTime(r.Clock.Now())
+	if err := r.Status().Update(ctx, &obj); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to update the status of SpotInterruptedNode: %w", err)
+	}
+	// TODO: emit an event
+	logger.Info("Successfully reconciled SpotInterruptedNode")
 	return ctrl.Result{}, nil
+}
+
+func (r *SpotInterruptedNodeReconciler) reconcile(ctx context.Context, obj spothandlerv1.SpotInterruptedNode) error {
+	var podList corev1.PodList
+	if err := r.List(ctx, &podList, ctrlclient.MatchingFields{podNodeNameField: obj.Spec.Node.Name}); err != nil {
+		return fmt.Errorf("failed to find Pods: %w", err)
+	}
+	for _, pod := range podList.Items {
+		if err := r.createSpotInterruptedPod(ctx, obj, pod); err != nil {
+			return fmt.Errorf("failed to create SpotInterruptedPod: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *SpotInterruptedNodeReconciler) createSpotInterruptedPod(ctx context.Context, obj spothandlerv1.SpotInterruptedNode, pod corev1.Pod) error {
+	spotInterruptedPod := spothandlerv1.SpotInterruptedPod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+		},
+		Spec: spothandlerv1.SpotInterruptedPodSpec{
+			Pod: corev1.LocalObjectReference{Name: pod.Name},
+		},
+	}
+	if err := ctrl.SetControllerReference(&obj, &spotInterruptedPod, r.Scheme); err != nil {
+		return fmt.Errorf("failed to set the controller reference from SpotInterruptedNode to SpotInterruptedPod: %w", err)
+	}
+	if err := r.Create(ctx, &spotInterruptedPod); err != nil {
+		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create SpotInterruptedPod: %w", err))
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SpotInterruptedNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, podNodeNameField,
+		func(obj ctrlclient.Object) []string {
+			pod := obj.(*corev1.Pod)
+			if pod.Spec.NodeName == "" {
+				return nil
+			}
+			return []string{pod.Spec.NodeName}
+		},
+	); err != nil {
+		return fmt.Errorf("failed to create an index for field %s: %w", podNodeNameField, err)
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&spothandlerv1.SpotInterruptedNode{}).
 		Complete(r)
