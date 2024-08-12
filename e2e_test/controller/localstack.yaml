@@ -17,6 +17,10 @@ spec:
           image: localstack/localstack:3.6.0
           ports:
             - containerPort: 4566
+          readinessProbe:
+            httpGet:
+              path: /_localstack/health
+              port: 4566
 ---
 apiVersion: v1
 kind: Service
