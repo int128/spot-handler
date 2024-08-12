@@ -20,7 +20,7 @@ deploy:
 	kubectl -n $(PROJECT_NAME)-system rollout status deployment $(PROJECT_NAME)-controller-manager
 	kubectl apply -f fixtures/
 	kubectl rollout status deployment localstack
-	kubectl -A get deployment
+	kubectl get deployment -A
 
 test:
 	kubectl exec deploy/localstack -- awslocal --region us-west-2 sqs create-queue --queue-name spot-handler-e2e
