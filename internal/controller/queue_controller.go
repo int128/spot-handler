@@ -103,7 +103,7 @@ func (r *QueueReconciler) reconcileMessage(ctx context.Context, queueObj spothan
 		return fmt.Errorf("failed to set the controller reference from Queue to SpotInterruption: %w", err)
 	}
 	if err := r.Client.Create(ctx, &spotInterruption); err != nil {
-		return fmt.Errorf("failed to create a SpotInterruption: %w", err)
+		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create a SpotInterruption: %w", err))
 	}
 	if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(queueObj.Spec.URL),
