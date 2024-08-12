@@ -1,5 +1,5 @@
 resources:
   - ../../config/default
-  - localstack.yaml
+  - ../fixtures/localstack.yaml
 patches:
-  - path: manager.yaml
+  - path: manager_patch.yaml

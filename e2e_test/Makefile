@@ -18,17 +18,19 @@ deploy:
 	cd controller && kustomize edit set image controller="$(CONTROLLER_IMAGE)"
 	kustomize build controller | kubectl apply -f -
 	kubectl -n $(PROJECT_NAME)-system rollout status deployment $(PROJECT_NAME)-controller-manager
-	kubectl -n default rollout status deployment localstack
-	kubectl -n $(PROJECT_NAME)-system get deployment
+	kubectl apply -f fixtures/
+	kubectl rollout status deployment localstack
+	kubectl -A get deployment
 
 test:
-	kubectl -n default exec deploy/localstack -- awslocal --region us-west-2 sqs create-queue --queue-name spot-handler-e2e
-	kubectl apply -f fixtures/node.yaml
-	kubectl apply -f fixtures/queue.yaml
-	kubectl -n default exec deploy/localstack -- awslocal --region us-west-2 sqs send-message \
+	kubectl exec deploy/localstack -- awslocal --region us-west-2 sqs create-queue --queue-name spot-handler-e2e
+	kubectl exec deploy/localstack -- awslocal --region us-west-2 sqs send-message \
 		--queue-url http://localhost:4566/000000000000/spot-handler-e2e \
-		--message-body "$$(cat fixtures/message.json)"
+		--message-body "$$(cat spot/message.json)"
 	until kubectl get spotinterruptednode fixture-node; do sleep 1; done
 
 logs-controller:
 	-kubectl -n $(PROJECT_NAME)-system logs -l control-plane=controller-manager --all-containers --tail=-1
+
+logs-localstack:
+	-kubectl logs -l app.kubernetes.io/name=localstack --all-containers --tail=-1
