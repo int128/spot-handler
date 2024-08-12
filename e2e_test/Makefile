@@ -22,10 +22,10 @@ deploy:
 	kubectl -n $(PROJECT_NAME)-system get deployment
 
 test:
-	kubectl -n default exec deploy/localstack -- awslocal sqs create-queue --queue-name spot-handler-e2e
+	kubectl -n default exec deploy/localstack -- awslocal --region us-west-2 sqs create-queue --queue-name spot-handler-e2e
 	kubectl apply -f fixtures/node.yaml
 	kubectl apply -f fixtures/queue.yaml
-	kubectl -n default exec deploy/localstack -- awslocal sqs send-message \
+	kubectl -n default exec deploy/localstack -- awslocal --region us-west-2 sqs send-message \
 		--queue-url http://localhost:4566/000000000000/spot-handler-e2e \
 		--message-body "$$(cat fixtures/message.json)"
 	until kubectl get spotinterruptednode fixture-node; do sleep 1; done
