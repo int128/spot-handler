@@ -50,47 +50,69 @@ type QueueReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := ctrllog.FromContext(ctx)
-
-	var queueObj spothandlerv1.Queue
-	if err := r.Get(ctx, req.NamespacedName, &queueObj); err != nil {
+	var obj spothandlerv1.Queue
+	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, ctrlclient.IgnoreNotFound(err)
 	}
+	logger := ctrllog.FromContext(ctx, "sqsQueueURL", obj.Spec.URL)
+	ctx = ctrllog.IntoContext(ctx, logger)
 
 	receiveMessageOutput, err := r.SQSClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String(queueObj.Spec.URL),
+		QueueUrl:            aws.String(obj.Spec.URL),
 		MaxNumberOfMessages: 10,
 		WaitTimeSeconds:     10,
 	})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to receive messages from SQS: %w", err)
+		logger.Error(err, "Failed to receive messages from the queue")
+		return ctrl.Result{}, fmt.Errorf("failed to receive messages from the queue: %w", err)
 	}
 	messages := receiveMessageOutput.Messages
 	if len(messages) == 0 {
 		return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, nil
 	}
-	logger.Info("Received messages", "count", len(messages))
+	logger.Info("Received messages from the queue", "count", len(messages))
 
 	var wg sync.WaitGroup
 	errs := make([]error, len(messages))
-	for i, message := range messages {
+	for i, msg := range messages {
 		wg.Add(1)
-		go func(i int, message sqstypes.Message) {
+		go func(i int, msg sqstypes.Message) {
 			defer wg.Done()
-			if err := r.reconcileMessage(ctx, queueObj, message); err != nil {
+			if err := r.reconcileMessage(ctx, obj, msg); err != nil {
 				errs[i] = err
 			}
-		}(i, message)
+		}(i, msg)
 	}
 	return ctrl.Result{RequeueAfter: 1 * time.Millisecond}, errors.Join(errs...)
 }
 
-func (r *QueueReconciler) reconcileMessage(ctx context.Context, queueObj spothandlerv1.Queue, message sqstypes.Message) error {
+func (r *QueueReconciler) reconcileMessage(ctx context.Context, obj spothandlerv1.Queue, msg sqstypes.Message) error {
+	logger := ctrllog.FromContext(ctx,
+		"messageID", aws.ToString(msg.MessageId),
+		"receiptHandle", aws.ToString(msg.ReceiptHandle),
+	)
+	ctx = ctrllog.IntoContext(ctx, logger)
+
+	if err := r.createSpotInterruption(ctx, obj, msg); err != nil {
+		return err
+	}
+	if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(obj.Spec.URL),
+		ReceiptHandle: msg.ReceiptHandle,
+	}); err != nil {
+		logger.Error(err, "Failed to delete the message from queue")
+		return fmt.Errorf("failed to delete the message from queue: %w", err)
+	}
+	logger.Info("Deleted the message from queue")
+	return nil
+}
+
+func (r *QueueReconciler) createSpotInterruption(ctx context.Context, obj spothandlerv1.Queue, msg sqstypes.Message) error {
 	logger := ctrllog.FromContext(ctx)
 
-	spec, err := spot.Parse(aws.ToString(message.Body))
+	spec, err := spot.Parse(aws.ToString(msg.Body))
 	if err != nil {
-		logger.Info("Dropped an invalid message", "error", err, "body", aws.ToString(message.Body))
+		logger.Info("Ignored an invalid message", "error", err, "body", aws.ToString(msg.Body))
 		return nil
 	}
 	spotInterruption := spothandlerv1.SpotInterruption{
@@ -99,17 +121,11 @@ func (r *QueueReconciler) reconcileMessage(ctx context.Context, queueObj spothan
 		},
 		Spec: *spec,
 	}
-	if err := ctrl.SetControllerReference(&queueObj, &spotInterruption, r.Scheme); err != nil {
+	if err := ctrl.SetControllerReference(&obj, &spotInterruption, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set the controller reference from Queue to SpotInterruption: %w", err)
 	}
 	if err := r.Client.Create(ctx, &spotInterruption); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create a SpotInterruption: %w", err))
-	}
-	if _, err := r.SQSClient.DeleteMessage(ctx, &sqs.DeleteMessageInput{
-		QueueUrl:      aws.String(queueObj.Spec.URL),
-		ReceiptHandle: message.ReceiptHandle,
-	}); err != nil {
-		return fmt.Errorf("failed to delete the message from SQS: %w", err)
 	}
 	return nil
 }
