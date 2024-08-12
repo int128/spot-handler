@@ -1,0 +1,6 @@
+apiVersion: spothandler.int128.github.io/v1
+kind: Queue
+metadata:
+  name: fixture-queue
+spec:
+  url: http://localstack.default.svc.cluster.local:4566/000000000000/spot-handler-e2e
