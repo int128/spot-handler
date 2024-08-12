@@ -37,15 +37,21 @@ spec:
           metadata:
             type: object
           spec:
-            description: SpotInterruptionSpec represents an EC2SpotInstanceInterruptionWarning
-              event.
+            description: |-
+              SpotInterruptionSpec represents an EC2 Spot Instance Interruption Warning event.
+              See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html for details.
             properties:
               availabilityZone:
+                description: AvailabilityZone represents the availability zone in
+                  which the instance is running.
                 type: string
               eventTimestamp:
+                description: EventTimestamp is the time at which the event was generated
+                  by EventBridge.
                 format: date-time
                 type: string
               instanceID:
+                description: InstanceID represents the instance affected by the event.
                 type: string
             type: object
           status:
