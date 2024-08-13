@@ -116,11 +116,12 @@ func (r *SpotInterruptedPodReconciler) terminatePodByPolicy(ctx context.Context,
 }
 
 func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
+	logger := ctrllog.FromContext(ctx)
+
 	eventMessage := fmt.Sprintf("Pod %s on Node %s of %s is interrupted.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID)
 	if obj.Status.TerminatedByPodPolicy {
 		eventMessage += " Pod is terminated by the PodPolicy."
 	}
-
 	ref, err := reference.GetReference(r.Scheme, &pod)
 	if err != nil {
 		return fmt.Errorf("failed to get the reference of the Pod: %w", err)
@@ -152,6 +153,7 @@ func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spot
 	if err := r.Create(ctx, &event); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create Event: %w", err))
 	}
+	logger.Info("Created an Event", "reason", event.Reason, "message", event.Message)
 	return nil
 }
 

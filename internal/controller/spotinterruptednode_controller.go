@@ -110,6 +110,8 @@ func (r *SpotInterruptedNodeReconciler) createSpotInterruptedPod(ctx context.Con
 }
 
 func (r *SpotInterruptedNodeReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedNode) error {
+	logger := ctrllog.FromContext(ctx)
+
 	var node corev1.Node
 	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Node.Name}, &node); err != nil {
 		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Node: %w", err))
@@ -145,6 +147,7 @@ func (r *SpotInterruptedNodeReconciler) createEvent(ctx context.Context, obj spo
 	if err := r.Create(ctx, &event); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create an Event: %w", err))
 	}
+	logger.Info("Created an Event", "reason", event.Reason, "message", event.Message)
 	return nil
 }
 
