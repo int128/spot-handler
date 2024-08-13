@@ -34,6 +34,26 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			ctx := context.TODO()
 
+			By("Creating a Pod resource")
+			fixturePod := corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-pod-",
+					Namespace:    "default",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "test-container",
+							Image: "test-image",
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &fixturePod)).To(Succeed())
+			})
+
 			By("Creating a SpotInterruptedPod resource")
 			spotInterruptedPod := spothandlerv1.SpotInterruptedPod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -41,7 +61,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 					Namespace:    "default",
 				},
 				Spec: spothandlerv1.SpotInterruptedPodSpec{
-					Pod:        corev1.LocalObjectReference{Name: "test-pod"},
+					Pod:        corev1.LocalObjectReference{Name: fixturePod.Name},
 					Node:       corev1.LocalObjectReference{Name: "test-node"},
 					InstanceID: "i-1234567890abcdef0",
 				},
@@ -56,12 +76,29 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPod)).To(Succeed())
 				g.Expect(spotInterruptedPod.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
+
+			By("Checking if the Pod is not terminated")
+			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &fixturePod)).To(Succeed())
 		})
 	})
 
 	Context("When terminateOnSpotInterruption is given", func() {
 		It("should terminate the Pod", func() {
 			ctx := context.TODO()
+
+			By("Creating a PodPolicy resource")
+			podPolicy := spothandlerv1.PodPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-pod-policy-",
+				},
+				Spec: spothandlerv1.PodPolicySpec{
+					TerminateOnSpotInterruption: true,
+				},
+			}
+			Expect(k8sClient.Create(ctx, &podPolicy)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &podPolicy)).To(Succeed())
+			})
 
 			By("Creating a Pod resource")
 			fixturePod := corev1.Pod{
@@ -80,21 +117,8 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
 			DeferCleanup(func() {
+				// Pod will be deleted by the controller in the test
 				Expect(ctrlclient.IgnoreNotFound(k8sClient.Delete(ctx, &fixturePod))).To(Succeed())
-			})
-
-			By("Creating a PodPolicy resource")
-			podPolicy := spothandlerv1.PodPolicy{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-pod-policy-",
-				},
-				Spec: spothandlerv1.PodPolicySpec{
-					TerminateOnSpotInterruption: true,
-				},
-			}
-			Expect(k8sClient.Create(ctx, &podPolicy)).To(Succeed())
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &podPolicy)).To(Succeed())
 			})
 
 			By("Creating a SpotInterruptedPod resource")
