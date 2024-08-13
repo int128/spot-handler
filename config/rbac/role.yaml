@@ -24,6 +24,15 @@ rules:
   resources:
   - pods
   verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - podpolicies
+  verbs:
   - get
   - list
   - watch

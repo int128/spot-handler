@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +44,10 @@ type SpotInterruptedPodReconciler struct {
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptedpods/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptedpods/finalizers,verbs=update
 
+// +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=podpolicies,verbs=get;list;watch
+
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -70,17 +74,47 @@ func (r *SpotInterruptedPodReconciler) Reconcile(ctx context.Context, req ctrl.R
 }
 
 func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spothandlerv1.SpotInterruptedPod) error {
-	if err := r.createEvent(ctx, obj); err != nil {
+	var pod corev1.Pod
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Pod.Name, Namespace: obj.Namespace}, &pod); err != nil {
+		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Pod: %w", err))
+	}
+	if err := r.terminatePodIfPolicyIsMatched(ctx, pod); err != nil {
+		return err
+	}
+	if err := r.createEvent(ctx, obj, pod); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod) error {
-	var pod corev1.Pod
-	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Pod.Name, Namespace: obj.Namespace}, &pod); err != nil {
-		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Pod: %w", err))
+func (r *SpotInterruptedPodReconciler) terminatePodIfPolicyIsMatched(ctx context.Context, pod corev1.Pod) error {
+	logger := ctrllog.FromContext(ctx)
+
+	var podPolicyList spothandlerv1.PodPolicyList
+	if err := r.List(ctx, &podPolicyList); err != nil {
+		return fmt.Errorf("failed to list PodPolicy: %w", err)
 	}
+	terminateOnSpotInterruption := slices.ContainsFunc(podPolicyList.Items, func(podPolicy spothandlerv1.PodPolicy) bool {
+		return podPolicy.Spec.TerminateOnSpotInterruption
+	})
+	if !terminateOnSpotInterruption {
+		return nil
+	}
+
+	isDaemonPod := slices.ContainsFunc(pod.OwnerReferences, func(owner metav1.OwnerReference) bool {
+		return owner.APIVersion == "apps/v1" && owner.Kind == "DaemonSet"
+	})
+	if isDaemonPod {
+		return nil
+	}
+	if err := r.Delete(ctx, &pod); err != nil {
+		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to delete the Pod: %w", err))
+	}
+	logger.Info("Terminating the Pod", "pod", pod.Name)
+	return nil
+}
+
+func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
 	ref, err := reference.GetReference(r.Scheme, &pod)
 	if err != nil {
 		return fmt.Errorf("failed to get the reference of the Pod: %w", err)

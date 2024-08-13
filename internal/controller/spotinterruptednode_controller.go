@@ -45,7 +45,7 @@ type SpotInterruptedNodeReconciler struct {
 // +kubebuilder:rbac:groups=spothandler.int128.github.io,resources=spotinterruptednodes/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
-
+// +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
