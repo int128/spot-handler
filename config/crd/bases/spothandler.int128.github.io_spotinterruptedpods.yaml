@@ -85,6 +85,10 @@ spec:
                   successfully.
                 format: date-time
                 type: string
+              terminatedByPodPolicy:
+                description: TerminatedByPodPolicy indicates if the Pod is terminated
+                  by PodPolicy.
+                type: boolean
             type: object
         type: object
     served: true

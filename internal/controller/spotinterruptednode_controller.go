@@ -140,7 +140,7 @@ func (r *SpotInterruptedNodeReconciler) createEvent(ctx context.Context, obj spo
 		Count:               1,
 		Type:                corev1.EventTypeWarning,
 		Reason:              "SpotInterrupted",
-		Message:             fmt.Sprintf("Node %s, Instance %s was interrupted", obj.Spec.Node.Name, obj.Spec.InstanceID),
+		Message:             fmt.Sprintf("Node %s of %s is interrupted", obj.Spec.Node.Name, obj.Spec.InstanceID),
 	}
 	if err := r.Create(ctx, &event); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create an Event: %w", err))

@@ -38,6 +38,10 @@ type SpotInterruptedPodStatus struct {
 	// Timestamp at which the SpotInterruptedPod was reconciled successfully.
 	// +optional
 	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
+
+	// TerminatedByPodPolicy indicates if the Pod is terminated by PodPolicy.
+	// +optional
+	TerminatedByPodPolicy bool `json:"terminatedByPodPolicy,omitempty"`
 }
 
 // +kubebuilder:object:root=true
