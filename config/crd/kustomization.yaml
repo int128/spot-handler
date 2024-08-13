@@ -6,6 +6,7 @@ resources:
 - bases/spothandler.int128.github.io_spotinterruptions.yaml
 - bases/spothandler.int128.github.io_spotinterruptedpods.yaml
 - bases/spothandler.int128.github.io_spotinterruptednodes.yaml
+- bases/spothandler.int128.github.io_podpolicies.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
@@ -20,6 +21,7 @@ patches:
 #- path: patches/cainjection_in_spotinterruptions.yaml
 #- path: patches/cainjection_in_spotinterruptedpods.yaml
 #- path: patches/cainjection_in_spotinterruptednodes.yaml
+#- path: patches/cainjection_in_podpolicies.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section
