@@ -2,7 +2,7 @@ module github.com/int128/spot-handler
 
 go 1.22.0
 
-toolchain go1.22.6
+toolchain go1.23.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.30.3
