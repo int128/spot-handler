@@ -54,6 +54,11 @@ func TestControllers(t *testing.T) {
 var _ = BeforeSuite(func() {
 	ctrllog.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	DeferCleanup(func() {
+		cancel()
+	})
+
 	By("bootstrapping test environment")
 	testEnv := &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
@@ -65,7 +70,7 @@ var _ = BeforeSuite(func() {
 		// Note that you must have the required binaries setup under the bin directory to perform
 		// the tests directly. When we run make test it will be setup and used automatically.
 		BinaryAssetsDirectory: filepath.Join("..", "..", "bin", "k8s",
-			fmt.Sprintf("1.30.0-%s-%s", runtime.GOOS, runtime.GOARCH)),
+			fmt.Sprintf("1.31.0-%s-%s", runtime.GOOS, runtime.GOARCH)),
 	}
 	DeferCleanup(func() {
 		By("tearing down the test environment")
@@ -114,10 +119,6 @@ var _ = BeforeSuite(func() {
 		Clock:  ktesting.NewFakePassiveClock(fakeNow),
 	}).SetupWithManager(mgr)).To(Succeed())
 
-	ctx, cancel := context.WithCancel(context.TODO())
-	DeferCleanup(func() {
-		cancel()
-	})
 	go func() {
 		defer GinkgoRecover()
 		Expect(mgr.Start(ctx)).To(Succeed())
