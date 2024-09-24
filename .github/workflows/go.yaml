@@ -23,5 +23,6 @@ jobs:
       contents: write
       pull-requests: write
     with:
-      go-version: 1.23.1
+      go-version-file: go.mod
+      cache-dependency-path: go.sum
       golangci-lint-version: v1.61.0
