@@ -40,83 +40,8 @@ rules:
   - spothandler.int128.github.io
   resources:
   - queues
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - queues/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - queues/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
   - spotinterruptednodes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - spotinterruptednodes/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - spotinterruptednodes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
   - spotinterruptedpods
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - spotinterruptedpods/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
-  - spotinterruptedpods/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
   - spotinterruptions
   verbs:
   - create
@@ -129,12 +54,18 @@ rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
+  - queues/finalizers
+  - spotinterruptednodes/finalizers
+  - spotinterruptedpods/finalizers
   - spotinterruptions/finalizers
   verbs:
   - update
 - apiGroups:
   - spothandler.int128.github.io
   resources:
+  - queues/status
+  - spotinterruptednodes/status
+  - spotinterruptedpods/status
   - spotinterruptions/status
   verbs:
   - get
