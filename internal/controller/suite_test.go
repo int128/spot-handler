@@ -54,11 +54,6 @@ func TestControllers(t *testing.T) {
 var _ = BeforeSuite(func() {
 	ctrllog.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	ctx, cancel := context.WithCancel(context.TODO())
-	DeferCleanup(func() {
-		cancel()
-	})
-
 	By("bootstrapping test environment")
 	testEnv := &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
@@ -119,6 +114,10 @@ var _ = BeforeSuite(func() {
 		Clock:  ktesting.NewFakePassiveClock(fakeNow),
 	}).SetupWithManager(mgr)).To(Succeed())
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	DeferCleanup(func() {
+		cancel()
+	})
 	go func() {
 		defer GinkgoRecover()
 		Expect(mgr.Start(ctx)).To(Succeed())
