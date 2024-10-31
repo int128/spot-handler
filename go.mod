@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.36.3
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/ginkgo/v2 v2.21.0
-	github.com/onsi/gomega v1.35.0
+	github.com/onsi/gomega v1.35.1
 	k8s.io/api v0.31.2
 	k8s.io/apimachinery v0.31.2
 	k8s.io/client-go v0.31.2
