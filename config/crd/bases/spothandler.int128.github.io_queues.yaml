@@ -39,6 +39,14 @@ spec:
           spec:
             description: QueueSpec defines the desired state of Queue
             properties:
+              podTermination:
+                description: PodTermination defines the configuration for Pod termination.
+                properties:
+                  enabled:
+                    description: Enabled indicates whether the Pod termination is
+                      enabled.
+                    type: boolean
+                type: object
               url:
                 description: URL points to a queue of SQS.
                 type: string

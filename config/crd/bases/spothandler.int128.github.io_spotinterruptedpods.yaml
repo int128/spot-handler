@@ -72,19 +72,35 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              queue:
+                description: Queue refers to the Queue which received the SpotInterruption
+                  event
+                properties:
+                  name:
+                    type: string
+                type: object
             type: object
           status:
             description: SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod
             properties:
+              podTermination:
+                description: PodTermination indicates whether the Pod is terminated.
+                properties:
+                  requestError:
+                    description: RequestError indicates the error message when the
+                      termination request failed.
+                    type: string
+                  requestedAt:
+                    description: RequestedAt indicates the time at which the termination
+                      was requested.
+                    format: date-time
+                    type: string
+                type: object
               reconciledAt:
                 description: Timestamp at which the SpotInterruptedPod was reconciled
                   successfully.
                 format: date-time
                 type: string
-              terminatedByPodPolicy:
-                description: TerminatedByPodPolicy indicates if the Pod is terminated
-                  by PodPolicy.
-                type: boolean
             type: object
         type: object
     served: true

@@ -53,6 +53,13 @@ spec:
               instanceID:
                 description: InstanceID represents the instance affected by the event.
                 type: string
+              queue:
+                description: Queue refers to the Queue which received the SpotInterruption
+                  event
+                properties:
+                  name:
+                    type: string
+                type: object
             type: object
           status:
             description: SpotInterruptionStatus defines the observed state of SpotInterruption

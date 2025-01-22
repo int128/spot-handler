@@ -29,6 +29,9 @@ type SpotInterruptedPodSpec struct {
 	// Node refers to the Node affected by SpotInterruption
 	Node corev1.LocalObjectReference `json:"node,omitempty"`
 
+	// Queue refers to the Queue which received the SpotInterruption event
+	Queue QueueReference `json:"queue,omitempty"`
+
 	// InstanceID refers to the instance ID of the Node affected by SpotInterruption
 	InstanceID string `json:"instanceID,omitempty"`
 }
@@ -39,9 +42,20 @@ type SpotInterruptedPodStatus struct {
 	// +optional
 	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
 
-	// TerminatedByPodPolicy indicates if the Pod is terminated by PodPolicy.
+	// PodTermination indicates whether the Pod is terminated.
 	// +optional
-	TerminatedByPodPolicy bool `json:"terminatedByPodPolicy,omitempty"`
+	PodTermination SpotInterruptedPodTerminationStatus `json:"podTermination,omitempty"`
+}
+
+// SpotInterruptedPodTerminationStatus defines the observed state of Pod termination
+type SpotInterruptedPodTerminationStatus struct {
+	// RequestedAt indicates the time at which the termination was requested.
+	// +optional
+	RequestedAt metav1.Time `json:"requestedAt,omitempty"`
+
+	// RequestError indicates the error message when the termination request failed.
+	// +optional
+	RequestError string `json:"requestError,omitempty"`
 }
 
 // +kubebuilder:object:root=true

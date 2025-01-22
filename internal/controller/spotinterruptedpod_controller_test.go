@@ -82,22 +82,24 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 		})
 	})
 
-	Context("When terminateOnSpotInterruption is given", func() {
+	Context("When pod termination is enabled", func() {
 		It("should terminate the Pod", func() {
 			ctx := context.TODO()
 
-			By("Creating a PodPolicy resource")
-			podPolicy := spothandlerv1.PodPolicy{
+			By("Creating a Queue resource")
+			queue := spothandlerv1.Queue{
 				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-pod-policy-",
+					GenerateName: "test-queue-",
 				},
-				Spec: spothandlerv1.PodPolicySpec{
-					TerminateOnSpotInterruption: true,
+				Spec: spothandlerv1.QueueSpec{
+					PodTermination: spothandlerv1.QueuePodTerminationSpec{
+						Enabled: true,
+					},
 				},
 			}
-			Expect(k8sClient.Create(ctx, &podPolicy)).To(Succeed())
+			Expect(k8sClient.Create(ctx, &queue)).To(Succeed())
 			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &podPolicy)).To(Succeed())
+				Expect(k8sClient.Delete(ctx, &queue)).To(Succeed())
 			})
 
 			By("Creating a Pod resource")
@@ -130,6 +132,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				Spec: spothandlerv1.SpotInterruptedPodSpec{
 					Pod:        corev1.LocalObjectReference{Name: fixturePod.Name},
 					Node:       corev1.LocalObjectReference{Name: "test-node"},
+					Queue:      spothandlerv1.QueueReference{Name: queue.Name},
 					InstanceID: "i-1234567890abcdef0",
 				},
 			}

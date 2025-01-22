@@ -78,50 +78,41 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj *spoth
 	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Pod.Name, Namespace: obj.Namespace}, &pod); err != nil {
 		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Pod: %w", err))
 	}
-	terminatedByPodPolicy, err := r.terminatePodByPolicy(ctx, pod)
-	if err != nil {
+	if err := r.createSpotInterruptedEvent(ctx, *obj, pod); err != nil {
 		return err
 	}
-	obj.Status.TerminatedByPodPolicy = terminatedByPodPolicy
-	if err := r.createEvent(ctx, *obj, pod); err != nil {
-		return err
-	}
-	return nil
-}
 
-func (r *SpotInterruptedPodReconciler) terminatePodByPolicy(ctx context.Context, pod corev1.Pod) (bool, error) {
-	logger := ctrllog.FromContext(ctx)
+	if obj.Spec.Queue.Name == "" {
+		return nil
+	}
+	var queue spothandlerv1.Queue
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Queue.Name}, &queue); err != nil {
+		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Queue: %w", err))
+	}
+	if !queue.Spec.PodTermination.Enabled {
+		return nil
+	}
 
 	isDaemonPod := slices.ContainsFunc(pod.OwnerReferences, func(owner metav1.OwnerReference) bool {
 		return owner.APIVersion == "apps/v1" && owner.Kind == "DaemonSet"
 	})
 	if isDaemonPod {
-		return false, nil
+		return nil
 	}
-	var podPolicyList spothandlerv1.PodPolicyList
-	if err := r.List(ctx, &podPolicyList); err != nil {
-		return false, fmt.Errorf("failed to list PodPolicy: %w", err)
+	obj.Status.PodTermination.RequestedAt = metav1.NewTime(r.Clock.Now())
+
+	gracePeriod := ctrlclient.GracePeriodSeconds(30)
+	if err := r.Delete(ctx, &pod, gracePeriod); err != nil {
+		obj.Status.PodTermination.RequestError = fmt.Sprintf("delete error: %s", err)
 	}
-	terminateByPolicy := slices.ContainsFunc(podPolicyList.Items, func(podPolicy spothandlerv1.PodPolicy) bool {
-		return podPolicy.Spec.TerminateOnSpotInterruption
-	})
-	if !terminateByPolicy {
-		return false, nil
+	if err := r.createPodTerminatingEvent(ctx, *obj, pod); err != nil {
+		return err
 	}
-	if err := r.Delete(ctx, &pod); err != nil {
-		return false, ctrlclient.IgnoreNotFound(fmt.Errorf("failed to delete the Pod: %w", err))
-	}
-	logger.Info("Terminating the Pod due to the PodPolicy", "pod", pod.Name)
-	return true, nil
+	return nil
 }
 
-func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
+func (r *SpotInterruptedPodReconciler) createSpotInterruptedEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
 	logger := ctrllog.FromContext(ctx)
-
-	eventMessage := fmt.Sprintf("Pod %s on Node %s of %s is interrupted.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID)
-	if obj.Status.TerminatedByPodPolicy {
-		eventMessage += " Pod is terminated by the PodPolicy."
-	}
 	ref, err := reference.GetReference(r.Scheme, &pod)
 	if err != nil {
 		return fmt.Errorf("failed to get the reference of the Pod: %w", err)
@@ -136,7 +127,7 @@ func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spot
 	t := metav1.NewTime(r.Clock.Now())
 	event := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("spotinterruptedpod-%s", obj.Name),
+			Name:      fmt.Sprintf("spotinterrupted-%s", obj.Name),
 			Namespace: obj.Namespace,
 		},
 		Source:              source,
@@ -148,7 +139,49 @@ func (r *SpotInterruptedPodReconciler) createEvent(ctx context.Context, obj spot
 		Count:               1,
 		Type:                corev1.EventTypeWarning,
 		Reason:              "SpotInterrupted",
-		Message:             eventMessage,
+		Message:             fmt.Sprintf("Pod %s on Node %s of %s is interrupted.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID),
+	}
+	if err := r.Create(ctx, &event); err != nil {
+		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create Event: %w", err))
+	}
+	logger.Info("Created an Event", "reason", event.Reason, "message", event.Message)
+	return nil
+}
+
+func (r *SpotInterruptedPodReconciler) createPodTerminatingEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
+	logger := ctrllog.FromContext(ctx)
+	ref, err := reference.GetReference(r.Scheme, &pod)
+	if err != nil {
+		return fmt.Errorf("failed to get the reference of the Pod: %w", err)
+	}
+	// We emit an event without the EventRecorder because:
+	//  - Set the Host field.
+	//  - Emit an event exactly once.
+	source := corev1.EventSource{
+		Component: "spotinterruptedpod-controller",
+		Host:      obj.Spec.Node.Name,
+	}
+	t := metav1.NewTime(r.Clock.Now())
+	message := fmt.Sprintf("Pod %s on Node %s of %s is terminating.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID)
+	if obj.Status.PodTermination.RequestError != "" {
+		message = fmt.Sprintf("Failed to terminate the Pod %s on Node %s of %s: %s",
+			pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID, obj.Status.PodTermination.RequestError)
+	}
+	event := corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("podterminating-%s", obj.Name),
+			Namespace: obj.Namespace,
+		},
+		Source:              source,
+		ReportingController: source.Component,
+		ReportingInstance:   source.Host,
+		InvolvedObject:      *ref,
+		FirstTimestamp:      t,
+		LastTimestamp:       t,
+		Count:               1,
+		Type:                corev1.EventTypeNormal,
+		Reason:              "PodTerminating",
+		Message:             message,
 	}
 	if err := r.Create(ctx, &event); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create Event: %w", err))
