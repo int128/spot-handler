@@ -97,6 +97,7 @@ func (r *SpotInterruptedNodeReconciler) createSpotInterruptedPod(ctx context.Con
 		Spec: spothandlerv1.SpotInterruptedPodSpec{
 			Pod:        corev1.LocalObjectReference{Name: pod.Name},
 			Node:       corev1.LocalObjectReference{Name: obj.Spec.Node.Name},
+			Queue:      obj.Spec.Queue,
 			InstanceID: obj.Spec.InstanceID,
 		},
 	}

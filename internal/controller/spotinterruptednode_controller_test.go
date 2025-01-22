@@ -65,6 +65,7 @@ var _ = Describe("SpotInterruptedNode Controller", func() {
 				},
 				Spec: spothandlerv1.SpotInterruptedNodeSpec{
 					Node:       corev1.LocalObjectReference{Name: fixtureNode.Name},
+					Queue:      spothandlerv1.QueueReference{Name: "test-queue"},
 					InstanceID: "i-1234567890abcdef0",
 				},
 			}
@@ -82,6 +83,8 @@ var _ = Describe("SpotInterruptedNode Controller", func() {
 				return k8sClient.Get(ctx,
 					ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &spotInterruptedPod)
 			}).Should(Succeed())
+			Expect(spotInterruptedPod.Spec.Node.Name).To(Equal(fixtureNode.Name))
+			Expect(spotInterruptedPod.Spec.Queue.Name).To(Equal("test-queue"))
 		})
 	})
 })

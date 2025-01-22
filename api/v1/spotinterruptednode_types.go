@@ -28,6 +28,9 @@ type SpotInterruptedNodeSpec struct {
 
 	// InstanceID refers to the instance ID of the Node affected by SpotInterruption
 	InstanceID string `json:"instanceID,omitempty"`
+
+	// Queue refers to the Queue which received the SpotInterruption event
+	Queue QueueReference `json:"queue,omitempty"`
 }
 
 // SpotInterruptedNodeStatus defines the observed state of SpotInterruptedNode

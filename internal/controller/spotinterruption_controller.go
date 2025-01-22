@@ -110,6 +110,7 @@ func (r *SpotInterruptionReconciler) createSpotInterruptedNode(ctx context.Conte
 		},
 		Spec: spothandlerv1.SpotInterruptedNodeSpec{
 			Node:       corev1.LocalObjectReference{Name: node.Name},
+			Queue:      obj.Spec.Queue,
 			InstanceID: obj.Spec.InstanceID,
 		},
 	}

@@ -24,6 +24,16 @@ import (
 type QueueSpec struct {
 	// URL points to a queue of SQS.
 	URL string `json:"url,omitempty"`
+
+	// PodTermination defines the configuration for Pod termination.
+	PodTermination QueuePodTerminationSpec `json:"podTermination,omitempty"`
+}
+
+// QueuePodTerminationSpec represents the configuration for Pod termination.
+type QueuePodTerminationSpec struct {
+	// Enabled indicates whether the Pod termination is enabled.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // QueueStatus defines the observed state of Queue
@@ -52,6 +62,11 @@ type QueueList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Queue `json:"items"`
+}
+
+// QueueReference is a pointer to a Queue object.
+type QueueReference struct {
+	Name string `json:"name,omitempty"`
 }
 
 func init() {

@@ -31,6 +31,9 @@ type SpotInterruptionSpec struct {
 
 	// AvailabilityZone represents the availability zone in which the instance is running.
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
+
+	// Queue refers to the Queue which received the SpotInterruption event
+	Queue QueueReference `json:"queue,omitempty"`
 }
 
 // SpotInterruptionStatus defines the observed state of SpotInterruption
