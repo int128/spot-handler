@@ -22,8 +22,6 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
-- podpolicy_editor_role.yaml
-- podpolicy_viewer_role.yaml
 - spotinterruptednode_editor_role.yaml
 - spotinterruptednode_viewer_role.yaml
 - spotinterruptedpod_editor_role.yaml
