@@ -88,7 +88,6 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj *spoth
 	if isDaemonPod {
 		return nil
 	}
-	obj.Status.PodTermination.RequestedAt = metav1.NewTime(r.Clock.Now())
 
 	if obj.Spec.Queue.Name == "" {
 		return nil
@@ -102,8 +101,12 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj *spoth
 	}
 
 	var deleteOpts []ctrlclient.DeleteOption
-	if queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds != 0 {
-		deleteOpts = append(deleteOpts, ctrlclient.GracePeriodSeconds(queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds))
+	if queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds != nil {
+		deleteOpts = append(deleteOpts, ctrlclient.GracePeriodSeconds(*queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds))
+	}
+	obj.Status.PodTermination = spothandlerv1.SpotInterruptedPodTerminationStatus{
+		GracePeriodSeconds: queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds,
+		RequestedAt:        metav1.NewTime(r.Clock.Now()),
 	}
 	if err := r.Delete(ctx, &pod, deleteOpts...); err != nil {
 		obj.Status.PodTermination.RequestError = fmt.Sprintf("delete error: %s", err)
@@ -153,6 +156,19 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedEvent(ctx context.Co
 
 func (r *SpotInterruptedPodReconciler) createPodTerminatingEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
 	logger := ctrllog.FromContext(ctx)
+
+	var message string
+	switch {
+	case obj.Status.PodTermination.RequestError != "":
+		message = fmt.Sprintf("Failed to terminate the Pod %s on Node %s of %s: %s",
+			pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID, obj.Status.PodTermination.RequestError)
+	case obj.Status.PodTermination.GracePeriodSeconds != nil:
+		message = fmt.Sprintf("Pod %s on Node %s of %s is terminating with grace period %d seconds.",
+			pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID, *obj.Status.PodTermination.GracePeriodSeconds)
+	default:
+		message = fmt.Sprintf("Pod %s on Node %s of %s is terminating.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID)
+	}
+
 	ref, err := reference.GetReference(r.Scheme, &pod)
 	if err != nil {
 		return fmt.Errorf("failed to get the reference of the Pod: %w", err)
@@ -165,11 +181,6 @@ func (r *SpotInterruptedPodReconciler) createPodTerminatingEvent(ctx context.Con
 		Host:      obj.Spec.Node.Name,
 	}
 	t := metav1.NewTime(r.Clock.Now())
-	message := fmt.Sprintf("Pod %s on Node %s of %s is terminating.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID)
-	if obj.Status.PodTermination.RequestError != "" {
-		message = fmt.Sprintf("Failed to terminate the Pod %s on Node %s of %s: %s",
-			pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID, obj.Status.PodTermination.RequestError)
-	}
 	event := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("podterminating-%s", obj.Name),

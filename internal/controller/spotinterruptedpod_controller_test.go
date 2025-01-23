@@ -26,6 +26,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -95,7 +96,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 					SpotInterruption: spothandlerv1.QueueSpotInterruptionSpec{
 						PodTermination: spothandlerv1.QueuePodTerminationSpec{
 							Enabled:            true,
-							GracePeriodSeconds: 1,
+							GracePeriodSeconds: ptr.To(int64(1)),
 						},
 					},
 				},

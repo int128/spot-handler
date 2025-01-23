@@ -41,9 +41,9 @@ type QueuePodTerminationSpec struct {
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 
-	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds if set.
+	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
 	// +optional
-	GracePeriodSeconds int64 `json:"gracePeriodSeconds,omitempty"`
+	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
 }
 
 // QueueStatus defines the observed state of Queue

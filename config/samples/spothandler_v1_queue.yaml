@@ -7,3 +7,6 @@ metadata:
   name: queue-sample
 spec:
   url: https://sqs.us-east-2.amazonaws.com/123456789012/test-queue
+  podTermination:
+    enabled: true
+    gracePeriodSeconds: 30

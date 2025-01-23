@@ -52,8 +52,7 @@ spec:
                           when the Node is interrupted.
                         type: boolean
                       gracePeriodSeconds:
-                        description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds
-                          if set.
+                        description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
                         format: int64
                         type: integer
                     type: object
