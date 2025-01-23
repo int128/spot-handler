@@ -49,6 +49,10 @@ type SpotInterruptedPodStatus struct {
 
 // SpotInterruptedPodTerminationStatus defines the observed state of Pod termination
 type SpotInterruptedPodTerminationStatus struct {
+	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+	// +optional
+	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
+
 	// RequestedAt indicates the time at which the termination was requested.
 	// +optional
 	RequestedAt metav1.Time `json:"requestedAt,omitempty"`

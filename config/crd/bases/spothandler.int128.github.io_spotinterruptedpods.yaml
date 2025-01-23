@@ -86,6 +86,10 @@ spec:
               podTermination:
                 description: PodTermination indicates whether the Pod is terminated.
                 properties:
+                  gracePeriodSeconds:
+                    description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                    format: int64
+                    type: integer
                   requestError:
                     description: RequestError indicates the error message when the
                       termination request failed.
