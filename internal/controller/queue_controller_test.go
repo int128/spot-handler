@@ -38,10 +38,12 @@ var messageInstance1 string
 var messageInstance2 string
 
 var _ = Describe("Queue Controller", func() {
+	var queue spothandlerv1.Queue
+
 	BeforeEach(func() {
 		ctx := context.TODO()
 		By("Creating a Queue object")
-		queue := spothandlerv1.Queue{
+		queue = spothandlerv1.Queue{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "test-queue-",
 			},
@@ -87,6 +89,7 @@ var _ = Describe("Queue Controller", func() {
 			Expect(spotInterruption1.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
 			Expect(spotInterruption1.Spec.InstanceID).To(Equal("i-00000000000000001"))
 			Expect(spotInterruption1.Spec.AvailabilityZone).To(Equal("us-east-2a"))
+			Expect(spotInterruption1.Spec.Queue.Name).To(Equal(queue.Name))
 
 			By("Checking if SpotInterruption#2 is created")
 			var spotInterruption2 spothandlerv1.SpotInterruption
@@ -100,6 +103,7 @@ var _ = Describe("Queue Controller", func() {
 			Expect(spotInterruption2.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
 			Expect(spotInterruption2.Spec.InstanceID).To(Equal("i-00000000000000002"))
 			Expect(spotInterruption2.Spec.AvailabilityZone).To(Equal("us-east-2b"))
+			Expect(spotInterruption2.Spec.Queue.Name).To(Equal(queue.Name))
 
 			By("Checking if the queue becomes empty")
 			Expect(mockSQSClient.messages).To(BeEmpty())
