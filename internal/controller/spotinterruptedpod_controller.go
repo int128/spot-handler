@@ -82,17 +82,6 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj *spoth
 		return err
 	}
 
-	if obj.Spec.Queue.Name == "" {
-		return nil
-	}
-	var queue spothandlerv1.Queue
-	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Queue.Name}, &queue); err != nil {
-		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Queue: %w", err))
-	}
-	if !queue.Spec.PodTermination.Enabled {
-		return nil
-	}
-
 	isDaemonPod := slices.ContainsFunc(pod.OwnerReferences, func(owner metav1.OwnerReference) bool {
 		return owner.APIVersion == "apps/v1" && owner.Kind == "DaemonSet"
 	})
@@ -101,8 +90,22 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj *spoth
 	}
 	obj.Status.PodTermination.RequestedAt = metav1.NewTime(r.Clock.Now())
 
-	gracePeriod := ctrlclient.GracePeriodSeconds(30)
-	if err := r.Delete(ctx, &pod, gracePeriod); err != nil {
+	if obj.Spec.Queue.Name == "" {
+		return nil
+	}
+	var queue spothandlerv1.Queue
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Queue.Name}, &queue); err != nil {
+		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Queue: %w", err))
+	}
+	if !queue.Spec.SpotInterruption.PodTermination.Enabled {
+		return nil
+	}
+
+	var deleteOpts []ctrlclient.DeleteOption
+	if queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds != 0 {
+		deleteOpts = append(deleteOpts, ctrlclient.GracePeriodSeconds(queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds))
+	}
+	if err := r.Delete(ctx, &pod, deleteOpts...); err != nil {
 		obj.Status.PodTermination.RequestError = fmt.Sprintf("delete error: %s", err)
 	}
 	if err := r.createPodTerminatingEvent(ctx, *obj, pod); err != nil {

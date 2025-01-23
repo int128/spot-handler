@@ -92,8 +92,11 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 					GenerateName: "test-queue-",
 				},
 				Spec: spothandlerv1.QueueSpec{
-					PodTermination: spothandlerv1.QueuePodTerminationSpec{
-						Enabled: true,
+					SpotInterruption: spothandlerv1.QueueSpotInterruptionSpec{
+						PodTermination: spothandlerv1.QueuePodTerminationSpec{
+							Enabled:            true,
+							GracePeriodSeconds: 1,
+						},
 					},
 				},
 			}

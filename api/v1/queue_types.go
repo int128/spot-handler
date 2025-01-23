@@ -25,15 +25,25 @@ type QueueSpec struct {
 	// URL points to a queue of SQS.
 	URL string `json:"url,omitempty"`
 
+	// SpotInterruption defines the configuration for a SpotInterruption event.
+	SpotInterruption QueueSpotInterruptionSpec `json:"spotInterruption,omitempty"`
+}
+
+// QueueSpotInterruptionSpec represents the configuration for a SpotInterruption event.
+type QueueSpotInterruptionSpec struct {
 	// PodTermination defines the configuration for Pod termination.
 	PodTermination QueuePodTerminationSpec `json:"podTermination,omitempty"`
 }
 
 // QueuePodTerminationSpec represents the configuration for Pod termination.
 type QueuePodTerminationSpec struct {
-	// Enabled indicates whether the Pod termination is enabled.
+	// Enabled indicates whether to terminate a Pod when the Node is interrupted.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+
+	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds if set.
+	// +optional
+	GracePeriodSeconds int64 `json:"gracePeriodSeconds,omitempty"`
 }
 
 // QueueStatus defines the observed state of Queue
