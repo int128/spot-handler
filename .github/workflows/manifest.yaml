@@ -12,3 +12,13 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: kind create cluster
+      - run: kustomize build config/crd | kubectl apply -f -
+      - run: sleep 5
+      - run: kustomize build config/samples | kubectl apply -f -

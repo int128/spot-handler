@@ -1,9 +1,0 @@
-apiVersion: spothandler.int128.github.io/v1
-kind: SpotInterruptedPod
-metadata:
-  labels:
-    app.kubernetes.io/name: spot-handler
-    app.kubernetes.io/managed-by: kustomize
-  name: spotinterruptedpod-sample
-spec:
-  # TODO(user): Add fields here
