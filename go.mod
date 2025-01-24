@@ -2,6 +2,8 @@ module github.com/int128/spot-handler
 
 go 1.23.2
 
+godebug default=go1.23
+
 require (
 	github.com/aws/aws-sdk-go-v2 v1.33.0
 	github.com/aws/aws-sdk-go-v2/config v1.29.1
