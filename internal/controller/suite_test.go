@@ -53,7 +53,7 @@ func TestControllers(t *testing.T) {
 var _ = BeforeSuite(func() {
 	ctrllog.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	err = spothandlerv1.AddToScheme(scheme.Scheme)
+	err := spothandlerv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
@@ -131,7 +131,7 @@ func getFirstFoundEnvTestBinaryDir() string {
 	basePath := filepath.Join("..", "..", "bin", "k8s")
 	entries, err := os.ReadDir(basePath)
 	if err != nil {
-		logf.Log.Error(err, "Failed to read directory", "path", basePath)
+		ctrllog.Log.Error(err, "Failed to read directory", "path", basePath)
 		return ""
 	}
 	for _, entry := range entries {
