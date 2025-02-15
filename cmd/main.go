@@ -246,6 +246,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "SpotInterruptedPod")
 		os.Exit(1)
 	}
+	if err = (&controller.SpotInterruptedPodTerminationReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Clock:  clock.RealClock{},
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SpotInterruptedPodTermination")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	if metricsCertWatcher != nil {

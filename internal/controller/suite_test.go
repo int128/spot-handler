@@ -55,7 +55,6 @@ var _ = BeforeSuite(func() {
 
 	err := spothandlerv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-
 	// +kubebuilder:scaffold:scheme
 
 	By("bootstrapping test environment")
@@ -104,6 +103,12 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	Expect((&SpotInterruptedPodReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Clock:  ktesting.NewFakePassiveClock(fakeNow),
+	}).SetupWithManager(mgr)).To(Succeed())
+
+	Expect((&SpotInterruptedPodTerminationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Clock:  ktesting.NewFakePassiveClock(fakeNow),

@@ -6,6 +6,7 @@ resources:
 - bases/spothandler.int128.github.io_spotinterruptions.yaml
 - bases/spothandler.int128.github.io_spotinterruptedpods.yaml
 - bases/spothandler.int128.github.io_spotinterruptednodes.yaml
+- bases/spothandler.int128.github.io_spotinterruptedpodterminations.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

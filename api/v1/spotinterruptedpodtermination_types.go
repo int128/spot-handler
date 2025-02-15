@@ -1,5 +1,5 @@
 /*
-Copyright 2024.
+Copyright 2025.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// SpotInterruptedPodSpec represents a Pod affected by SpotInterruption
-type SpotInterruptedPodSpec struct {
+// SpotInterruptedPodTerminationSpec defines the desired state of SpotInterruptedPodTermination.
+type SpotInterruptedPodTerminationSpec struct {
 	// Pod refers to the Pod affected by SpotInterruption
 	Pod corev1.LocalObjectReference `json:"pod,omitempty"`
 
@@ -36,34 +36,42 @@ type SpotInterruptedPodSpec struct {
 	InstanceID string `json:"instanceID,omitempty"`
 }
 
-// SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod
-type SpotInterruptedPodStatus struct {
-	// Timestamp at which the SpotInterruptedPod was reconciled successfully.
+// SpotInterruptedPodTerminationStatus defines the observed state of SpotInterruptedPodTermination.
+type SpotInterruptedPodTerminationStatus struct {
+	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
 	// +optional
-	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
+	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
+
+	// RequestedAt indicates the time at which the termination was requested.
+	// +optional
+	RequestedAt metav1.Time `json:"requestedAt,omitempty"`
+
+	// RequestError indicates the error message when the termination request failed.
+	// +optional
+	RequestError string `json:"requestError,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// SpotInterruptedPod is the Schema for the spotinterruptedpods API
-type SpotInterruptedPod struct {
+// SpotInterruptedPodTermination is the Schema for the spotinterruptedpodterminations API.
+type SpotInterruptedPodTermination struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SpotInterruptedPodSpec   `json:"spec,omitempty"`
-	Status SpotInterruptedPodStatus `json:"status,omitempty"`
+	Spec   SpotInterruptedPodTerminationSpec   `json:"spec,omitempty"`
+	Status SpotInterruptedPodTerminationStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// SpotInterruptedPodList contains a list of SpotInterruptedPod
-type SpotInterruptedPodList struct {
+// SpotInterruptedPodTerminationList contains a list of SpotInterruptedPodTermination.
+type SpotInterruptedPodTerminationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SpotInterruptedPod `json:"items"`
+	Items           []SpotInterruptedPodTermination `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SpotInterruptedPod{}, &SpotInterruptedPodList{})
+	SchemeBuilder.Register(&SpotInterruptedPodTermination{}, &SpotInterruptedPodTerminationList{})
 }
