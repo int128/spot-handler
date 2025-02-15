@@ -74,7 +74,7 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spotha
 	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Pod.Name, Namespace: obj.Namespace}, &pod); err != nil {
 		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Pod: %w", err))
 	}
-	if err := r.createSpotInterruptedPodTermination(ctx, obj, pod); err != nil {
+	if err := r.createSpotInterruptedPodTermination(ctx, obj); err != nil {
 		return err
 	}
 	if err := r.createSpotInterruptedEvent(ctx, obj, pod); err != nil {
@@ -83,7 +83,7 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spotha
 	return nil
 }
 
-func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
+func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(ctx context.Context, obj spothandlerv1.SpotInterruptedPod) error {
 	if !obj.Spec.PodTermination.Enabled {
 		return nil
 	}
