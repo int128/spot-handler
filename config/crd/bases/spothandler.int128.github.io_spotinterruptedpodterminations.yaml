@@ -90,8 +90,8 @@ spec:
                 format: int64
                 type: integer
               reconciledAt:
-                description: Timestamp at which the SpotInterruptedPod was reconciled
-                  successfully.
+                description: Timestamp at which the SpotInterruptedPodTermination
+                  was reconciled successfully.
                 format: date-time
                 type: string
               requestError:
