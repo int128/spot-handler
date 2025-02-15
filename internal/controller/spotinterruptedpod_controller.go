@@ -84,14 +84,7 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spotha
 }
 
 func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
-	if obj.Spec.Queue.Name == "" {
-		return nil
-	}
-	var queue spothandlerv1.Queue
-	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Queue.Name}, &queue); err != nil {
-		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Queue: %w", err))
-	}
-	if !queue.Spec.SpotInterruption.PodTermination.Enabled {
+	if !obj.Spec.PodTermination.Enabled {
 		return nil
 	}
 
@@ -101,9 +94,10 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(ctx c
 			Namespace: obj.Namespace,
 		},
 		Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-			Pod: corev1.LocalObjectReference{
-				Name: pod.Name,
-			},
+			Pod:            obj.Spec.Pod,
+			Node:           obj.Spec.Node,
+			InstanceID:     obj.Spec.InstanceID,
+			PodTermination: obj.Spec.PodTermination,
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedPodTermination, r.Scheme); err != nil {
