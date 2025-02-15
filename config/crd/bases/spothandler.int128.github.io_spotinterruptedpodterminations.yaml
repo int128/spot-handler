@@ -73,22 +73,23 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              queue:
-                description: Queue refers to the Queue which received the SpotInterruption
-                  event
+              podTermination:
+                description: PodTermination is propagated from the owner object.
                 properties:
-                  name:
-                    type: string
+                  enabled:
+                    description: Enabled indicates whether to terminate a Pod when
+                      the Node is interrupted.
+                    type: boolean
+                  gracePeriodSeconds:
+                    description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                    format: int64
+                    type: integer
                 type: object
             type: object
           status:
             description: SpotInterruptedPodTerminationStatus defines the observed
               state of SpotInterruptedPodTermination.
             properties:
-              gracePeriodSeconds:
-                description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
-                format: int64
-                type: integer
               reconciledAt:
                 description: Timestamp at which the SpotInterruptedPodTermination
                   was reconciled successfully.

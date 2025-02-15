@@ -121,7 +121,7 @@ func (r *QueueReconciler) createSpotInterruption(ctx context.Context, obj spotha
 		},
 		Spec: *spec,
 	}
-	spotInterruption.Spec.Queue = spothandlerv1.QueueReference{Name: obj.Name}
+	spotInterruption.Spec.PodTermination = obj.Spec.SpotInterruption.PodTermination
 	if err := ctrl.SetControllerReference(&obj, &spotInterruption, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set the controller reference from Queue to SpotInterruption: %w", err)
 	}

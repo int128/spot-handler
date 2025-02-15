@@ -97,7 +97,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				},
 				Spec: spothandlerv1.QueueSpec{
 					SpotInterruption: spothandlerv1.QueueSpotInterruptionSpec{
-						PodTermination: spothandlerv1.QueuePodTerminationSpec{
+						PodTermination: spothandlerv1.PodTerminationSpec{
 							Enabled:            true,
 							GracePeriodSeconds: ptr.To(int64(1)),
 						},
@@ -139,8 +139,11 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				Spec: spothandlerv1.SpotInterruptedPodSpec{
 					Pod:        corev1.LocalObjectReference{Name: fixturePod.Name},
 					Node:       corev1.LocalObjectReference{Name: "test-node"},
-					Queue:      spothandlerv1.QueueReference{Name: queue.Name},
 					InstanceID: "i-1234567890abcdef0",
+					PodTermination: spothandlerv1.PodTerminationSpec{
+						Enabled:            true,
+						GracePeriodSeconds: ptr.To(int64(1)),
+					},
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruptedPod)).To(Succeed())
@@ -157,6 +160,10 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			By("Checking if the SpotInterruptedPodTermination is created")
 			var spotInterruptedPodTermination spothandlerv1.SpotInterruptedPodTermination
 			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
+			Expect(spotInterruptedPodTermination.Spec.Pod).To(Equal(spotInterruptedPod.Spec.Pod))
+			Expect(spotInterruptedPodTermination.Spec.Node).To(Equal(spotInterruptedPod.Spec.Node))
+			Expect(spotInterruptedPodTermination.Spec.InstanceID).To(Equal(spotInterruptedPod.Spec.InstanceID))
+			Expect(spotInterruptedPodTermination.Spec.PodTermination).To(Equal(spotInterruptedPod.Spec.PodTermination))
 		})
 	})
 })

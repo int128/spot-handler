@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
@@ -49,6 +50,12 @@ var _ = Describe("Queue Controller", func() {
 			},
 			Spec: spothandlerv1.QueueSpec{
 				URL: "https://sqs.us-east-2.amazonaws.com/123456789012/test-queue",
+				SpotInterruption: spothandlerv1.QueueSpotInterruptionSpec{
+					PodTermination: spothandlerv1.PodTerminationSpec{
+						Enabled:            true,
+						GracePeriodSeconds: ptr.To(int64(1)),
+					},
+				},
 			},
 		}
 		Expect(k8sClient.Create(ctx, &queue)).To(Succeed())
@@ -89,7 +96,7 @@ var _ = Describe("Queue Controller", func() {
 			Expect(spotInterruption1.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
 			Expect(spotInterruption1.Spec.InstanceID).To(Equal("i-00000000000000001"))
 			Expect(spotInterruption1.Spec.AvailabilityZone).To(Equal("us-east-2a"))
-			Expect(spotInterruption1.Spec.Queue.Name).To(Equal(queue.Name))
+			Expect(spotInterruption1.Spec.PodTermination).To(Equal(queue.Spec.SpotInterruption.PodTermination))
 
 			By("Checking if SpotInterruption#2 is created")
 			var spotInterruption2 spothandlerv1.SpotInterruption
@@ -103,7 +110,7 @@ var _ = Describe("Queue Controller", func() {
 			Expect(spotInterruption2.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
 			Expect(spotInterruption2.Spec.InstanceID).To(Equal("i-00000000000000002"))
 			Expect(spotInterruption2.Spec.AvailabilityZone).To(Equal("us-east-2b"))
-			Expect(spotInterruption2.Spec.Queue.Name).To(Equal(queue.Name))
+			Expect(spotInterruption2.Spec.PodTermination).To(Equal(queue.Spec.SpotInterruption.PodTermination))
 
 			By("Checking if the queue becomes empty")
 			Expect(mockSQSClient.messages).To(BeEmpty())

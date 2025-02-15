@@ -29,11 +29,11 @@ type SpotInterruptedPodTerminationSpec struct {
 	// Node refers to the Node affected by SpotInterruption
 	Node corev1.LocalObjectReference `json:"node,omitempty"`
 
-	// Queue refers to the Queue which received the SpotInterruption event
-	Queue QueueReference `json:"queue,omitempty"`
-
 	// InstanceID refers to the instance ID of the Node affected by SpotInterruption
 	InstanceID string `json:"instanceID,omitempty"`
+
+	// PodTermination is propagated from the owner object.
+	PodTermination PodTerminationSpec `json:"podTermination,omitempty"`
 }
 
 // SpotInterruptedPodTerminationStatus defines the observed state of SpotInterruptedPodTermination.
@@ -41,10 +41,6 @@ type SpotInterruptedPodTerminationStatus struct {
 	// Timestamp at which the SpotInterruptedPodTermination was reconciled successfully.
 	// +optional
 	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
-
-	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
-	// +optional
-	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
 
 	// RequestedAt indicates the time at which the termination was requested.
 	// +optional
