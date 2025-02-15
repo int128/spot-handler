@@ -27,7 +27,6 @@ import (
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/utils/clock"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -36,7 +35,7 @@ import (
 
 // SpotInterruptedPodTerminationReconciler reconciles a SpotInterruptedPodTermination object
 type SpotInterruptedPodTerminationReconciler struct {
-	client.Client
+	ctrlclient.Client
 	Scheme *runtime.Scheme
 	Clock  clock.PassiveClock
 }
@@ -54,7 +53,7 @@ func (r *SpotInterruptedPodTerminationReconciler) Reconcile(ctx context.Context,
 
 	var obj spothandlerv1.SpotInterruptedPodTermination
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, ctrlclient.IgnoreNotFound(err)
 	}
 	if !obj.Status.RequestedAt.IsZero() {
 		return ctrl.Result{}, nil
