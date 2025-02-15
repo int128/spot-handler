@@ -38,6 +38,10 @@ type SpotInterruptedPodTerminationSpec struct {
 
 // SpotInterruptedPodTerminationStatus defines the observed state of SpotInterruptedPodTermination.
 type SpotInterruptedPodTerminationStatus struct {
+	// Timestamp at which the SpotInterruptedPod was reconciled successfully.
+	// +optional
+	ReconciledAt metav1.Time `json:"reconciledAt,omitempty"`
+
 	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
 	// +optional
 	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`

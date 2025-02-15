@@ -89,6 +89,11 @@ spec:
                 description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
                 format: int64
                 type: integer
+              reconciledAt:
+                description: Timestamp at which the SpotInterruptedPod was reconciled
+                  successfully.
+                format: date-time
+                type: string
               requestError:
                 description: RequestError indicates the error message when the termination
                   request failed.

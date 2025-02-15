@@ -55,13 +55,14 @@ func (r *SpotInterruptedPodTerminationReconciler) Reconcile(ctx context.Context,
 	if err := r.Get(ctx, req.NamespacedName, &obj); err != nil {
 		return ctrl.Result{}, ctrlclient.IgnoreNotFound(err)
 	}
-	if !obj.Status.RequestedAt.IsZero() {
+	if !obj.Status.ReconciledAt.IsZero() {
 		return ctrl.Result{}, nil
 	}
 
 	if err := r.reconcile(ctx, &obj); err != nil {
 		return ctrl.Result{}, err
 	}
+	obj.Status.ReconciledAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Status().Update(ctx, &obj); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to update the status of SpotInterruptedPodTermination: %w", err)
 	}
