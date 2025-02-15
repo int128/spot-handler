@@ -4,21 +4,21 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.1
-  name: spotinterruptedpods.spothandler.int128.github.io
+  name: spotinterruptedpodterminations.spothandler.int128.github.io
 spec:
   group: spothandler.int128.github.io
   names:
-    kind: SpotInterruptedPod
-    listKind: SpotInterruptedPodList
-    plural: spotinterruptedpods
-    singular: spotinterruptedpod
+    kind: SpotInterruptedPodTermination
+    listKind: SpotInterruptedPodTerminationList
+    plural: spotinterruptedpodterminations
+    singular: spotinterruptedpodtermination
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: SpotInterruptedPod is the Schema for the spotinterruptedpods
-          API
+        description: SpotInterruptedPodTermination is the Schema for the spotinterruptedpodterminations
+          API.
         properties:
           apiVersion:
             description: |-
@@ -38,7 +38,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: SpotInterruptedPodSpec represents a Pod affected by SpotInterruption
+            description: SpotInterruptedPodTerminationSpec defines the desired state
+              of SpotInterruptedPodTermination.
             properties:
               instanceID:
                 description: InstanceID refers to the instance ID of the Node affected
@@ -81,11 +82,25 @@ spec:
                 type: object
             type: object
           status:
-            description: SpotInterruptedPodStatus defines the observed state of SpotInterruptedPod
+            description: SpotInterruptedPodTerminationStatus defines the observed
+              state of SpotInterruptedPodTermination.
             properties:
+              gracePeriodSeconds:
+                description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                format: int64
+                type: integer
               reconciledAt:
-                description: Timestamp at which the SpotInterruptedPod was reconciled
-                  successfully.
+                description: Timestamp at which the SpotInterruptedPodTermination
+                  was reconciled successfully.
+                format: date-time
+                type: string
+              requestError:
+                description: RequestError indicates the error message when the termination
+                  request failed.
+                type: string
+              requestedAt:
+                description: RequestedAt indicates the time at which the termination
+                  was requested.
                 format: date-time
                 type: string
             type: object

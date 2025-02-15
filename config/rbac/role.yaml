@@ -31,17 +31,10 @@ rules:
 - apiGroups:
   - spothandler.int128.github.io
   resources:
-  - podpolicies
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - spothandler.int128.github.io
-  resources:
   - queues
   - spotinterruptednodes
   - spotinterruptedpods
+  - spotinterruptedpodterminations
   - spotinterruptions
   verbs:
   - create
@@ -57,6 +50,7 @@ rules:
   - queues/finalizers
   - spotinterruptednodes/finalizers
   - spotinterruptedpods/finalizers
+  - spotinterruptedpodterminations/finalizers
   - spotinterruptions/finalizers
   verbs:
   - update
@@ -66,6 +60,7 @@ rules:
   - queues/status
   - spotinterruptednodes/status
   - spotinterruptedpods/status
+  - spotinterruptedpodterminations/status
   - spotinterruptions/status
   verbs:
   - get

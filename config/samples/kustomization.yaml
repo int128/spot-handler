@@ -7,4 +7,5 @@ resources:
 #- spothandler_v1_spotinterruptedpod.yaml
 #- spothandler_v1_spotinterruptednode.yaml
 
+- spothandler_v1_spotinterruptedpodtermination.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

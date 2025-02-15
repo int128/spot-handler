@@ -58,7 +58,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			By("Creating a SpotInterruptedPod resource")
 			spotInterruptedPod := spothandlerv1.SpotInterruptedPod{
 				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-spot-interrupted-pod-",
+					GenerateName: "test-spotinterruptedpod-",
 					Namespace:    "default",
 				},
 				Spec: spothandlerv1.SpotInterruptedPodSpec{
@@ -78,8 +78,11 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				g.Expect(spotInterruptedPod.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 
-			By("Checking if the Pod is not terminated")
-			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &fixturePod)).To(Succeed())
+			By("Checking if the SpotInterruptedPodTermination is not created")
+			var spotInterruptedPodTermination spothandlerv1.SpotInterruptedPodTermination
+			err := k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPodTermination)
+			Expect(err).To(HaveOccurred())
+			Expect(kerrors.IsNotFound(err)).To(BeTrue())
 		})
 	})
 
@@ -151,12 +154,9 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				g.Expect(spotInterruptedPod.Status.ReconciledAt).NotTo(BeZero())
 			}).Should(Succeed())
 
-			By("Checking if the Pod is terminated")
-			Eventually(func(g Gomega) {
-				err := k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &fixturePod)
-				g.Expect(err).To(HaveOccurred())
-				g.Expect(kerrors.IsNotFound(err)).To(BeTrue())
-			}).Should(Succeed())
+			By("Checking if the SpotInterruptedPodTermination is created")
+			var spotInterruptedPodTermination spothandlerv1.SpotInterruptedPodTermination
+			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
 		})
 	})
 })
