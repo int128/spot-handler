@@ -91,7 +91,7 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 
 			By("Checking if the Pod is terminated")
 			Eventually(func(g Gomega) {
-				err := k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &fixturePod)
+				err := k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&fixturePod), &fixturePod)
 				g.Expect(err).To(HaveOccurred())
 				g.Expect(kerrors.IsNotFound(err)).To(BeTrue())
 			}).Should(Succeed())
@@ -123,7 +123,7 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 
 			By("Checking if the SpotInterruptedPodTermination is reconciled")
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPodTermination.Name, Namespace: spotInterruptedPodTermination.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPodTermination), &spotInterruptedPodTermination)).To(Succeed())
 				g.Expect(spotInterruptedPodTermination.Status.ReconciledAt).NotTo(BeZero())
 			}).WithTimeout(3 * time.Second).Should(Succeed())
 			Expect(spotInterruptedPodTermination.Status.ReconciledAt.UTC()).To(BeTemporally("=", fakeNow.Add(1*time.Second)))
