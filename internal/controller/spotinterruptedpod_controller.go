@@ -74,11 +74,15 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spotha
 	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.SpotInterruption.Name}, &spotInterruption); err != nil {
 		return ctrlclient.IgnoreNotFound(err)
 	}
+	var queue spothandlerv1.Queue
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: spotInterruption.Spec.Queue.Name}, &queue); err != nil {
+		return ctrlclient.IgnoreNotFound(err)
+	}
 	var pod corev1.Pod
 	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Pod.Name, Namespace: obj.Namespace}, &pod); err != nil {
 		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Pod: %w", err))
 	}
-	if err := r.createSpotInterruptedPodTermination(ctx, obj, spotInterruption); err != nil {
+	if err := r.createSpotInterruptedPodTermination(ctx, obj, spotInterruption, queue); err != nil {
 		return err
 	}
 	if err := r.createSpotInterruptedEvent(ctx, obj, pod, spotInterruption); err != nil {
@@ -88,9 +92,9 @@ func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spotha
 }
 
 func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(
-	ctx context.Context, obj spothandlerv1.SpotInterruptedPod, spotInterruption spothandlerv1.SpotInterruption,
+	ctx context.Context, obj spothandlerv1.SpotInterruptedPod, spotInterruption spothandlerv1.SpotInterruption, queue spothandlerv1.Queue,
 ) error {
-	if !spotInterruption.Spec.PodTermination.Enabled {
+	if !queue.Spec.SpotInterruption.PodTermination.Enabled {
 		return nil
 	}
 
@@ -100,9 +104,10 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(
 			Namespace: obj.Namespace,
 		},
 		Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-			Pod:              obj.Spec.Pod,
-			Node:             obj.Spec.Node,
-			SpotInterruption: spothandlerv1.SpotInterruptionReferenceTo(spotInterruption),
+			GracePeriodSeconds: queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds,
+			Pod:                obj.Spec.Pod,
+			Node:               obj.Spec.Node,
+			InstanceID:         spotInterruption.Spec.InstanceID,
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedPodTermination, r.Scheme); err != nil {

@@ -26,6 +26,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,6 +55,19 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				Expect(k8sClient.Delete(ctx, &fixturePod)).To(Succeed())
 			})
 
+			By("Creating a Queue object")
+			queue := spothandlerv1.Queue{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-queue-",
+				},
+				Spec: spothandlerv1.QueueSpec{},
+			}
+			Expect(k8sClient.Create(ctx, &queue)).To(Succeed())
+			DeferCleanup(func() {
+				By("Deleting the Queue object")
+				Expect(k8sClient.Delete(ctx, &queue)).To(Succeed())
+			})
+
 			By("Creating a SpotInterruption resource")
 			spotInterruption := spothandlerv1.SpotInterruption{
 				ObjectMeta: metav1.ObjectMeta{
@@ -61,6 +75,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				},
 				Spec: spothandlerv1.SpotInterruptionSpec{
 					InstanceID: "i-1234567890abcdef0",
+					Queue:      spothandlerv1.QueueReferenceTo(queue),
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
@@ -124,6 +139,26 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				Expect(ctrlclient.IgnoreNotFound(k8sClient.Delete(ctx, &fixturePod))).To(Succeed())
 			})
 
+			By("Creating a Queue object")
+			queue := spothandlerv1.Queue{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "test-queue-",
+				},
+				Spec: spothandlerv1.QueueSpec{
+					SpotInterruption: spothandlerv1.QueueSpotInterruptionSpec{
+						PodTermination: spothandlerv1.QueuePodTerminationSpec{
+							Enabled:            true,
+							GracePeriodSeconds: ptr.To(int64(1)),
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, &queue)).To(Succeed())
+			DeferCleanup(func() {
+				By("Deleting the Queue object")
+				Expect(k8sClient.Delete(ctx, &queue)).To(Succeed())
+			})
+
 			By("Creating a SpotInterruption resource")
 			spotInterruption := spothandlerv1.SpotInterruption{
 				ObjectMeta: metav1.ObjectMeta{
@@ -131,9 +166,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				},
 				Spec: spothandlerv1.SpotInterruptionSpec{
 					InstanceID: "i-1234567890abcdef0",
-					PodTermination: spothandlerv1.PodTerminationSpec{
-						Enabled: true,
-					},
+					Queue:      spothandlerv1.QueueReferenceTo(queue),
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
@@ -166,7 +199,8 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
 			Expect(spotInterruptedPodTermination.Spec.Pod).To(Equal(spotInterruptedPod.Spec.Pod))
 			Expect(spotInterruptedPodTermination.Spec.Node).To(Equal(spotInterruptedPod.Spec.Node))
-			Expect(spotInterruptedPodTermination.Spec.SpotInterruption.Name).To(Equal(spotInterruption.Name))
+			Expect(spotInterruptedPodTermination.Spec.InstanceID).To(Equal(spotInterruption.Spec.InstanceID))
+			Expect(spotInterruptedPodTermination.Spec.GracePeriodSeconds).To(Equal(queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds))
 		})
 	})
 })

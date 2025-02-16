@@ -32,7 +32,18 @@ type QueueSpec struct {
 // QueueSpotInterruptionSpec represents the configuration for a SpotInterruption event.
 type QueueSpotInterruptionSpec struct {
 	// PodTermination defines the configuration for Pod termination.
-	PodTermination PodTerminationSpec `json:"podTermination,omitempty"`
+	PodTermination QueuePodTerminationSpec `json:"podTermination,omitempty"`
+}
+
+// QueuePodTerminationSpec represents the configuration for Pod termination.
+type QueuePodTerminationSpec struct {
+	// Enabled indicates whether to terminate a Pod when the Node is interrupted.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+
+	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+	// +optional
+	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
 }
 
 // QueueStatus defines the observed state of Queue
@@ -66,6 +77,13 @@ type QueueList struct {
 // QueueReference is a pointer to a Queue object.
 type QueueReference struct {
 	Name string `json:"name,omitempty"`
+}
+
+// QueueReferenceTo creates a QueueReference for the given Queue.
+func QueueReferenceTo(queue Queue) QueueReference {
+	return QueueReference{
+		Name: queue.Name,
+	}
 }
 
 func init() {

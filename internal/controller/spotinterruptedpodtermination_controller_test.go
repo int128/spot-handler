@@ -27,6 +27,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 )
@@ -57,23 +58,6 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 				Expect(ctrlclient.IgnoreNotFound(k8sClient.Delete(ctx, &fixturePod))).To(Succeed())
 			})
 
-			By("Creating a SpotInterruption resource")
-			spotInterruption := spothandlerv1.SpotInterruption{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-spotinterruption-",
-				},
-				Spec: spothandlerv1.SpotInterruptionSpec{
-					InstanceID: "i-1234567890abcdef0",
-					PodTermination: spothandlerv1.PodTerminationSpec{
-						Enabled: true,
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &spotInterruption)).To(Succeed())
-			})
-
 			By("Creating a SpotInterruptedPodTermination resource")
 			spotInterruptedPodTermination := spothandlerv1.SpotInterruptedPodTermination{
 				ObjectMeta: metav1.ObjectMeta{
@@ -81,9 +65,10 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 					Namespace:    "default",
 				},
 				Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-					Pod:              corev1.LocalObjectReference{Name: fixturePod.Name},
-					Node:             corev1.LocalObjectReference{Name: "test-node"},
-					SpotInterruption: spothandlerv1.SpotInterruptionReferenceTo(spotInterruption),
+					GracePeriodSeconds: ptr.To(int64(30)),
+					Pod:                corev1.LocalObjectReference{Name: fixturePod.Name},
+					Node:               corev1.LocalObjectReference{Name: "test-node"},
+					InstanceID:         "i-1234567890abcdef0",
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruptedPodTermination)).To(Succeed())

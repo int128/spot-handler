@@ -53,17 +53,11 @@ spec:
               instanceID:
                 description: InstanceID represents the instance affected by the event.
                 type: string
-              podTermination:
-                description: PodTermination is propagated from the owner object.
+              queue:
+                description: Queue is the reference to the origin of the event.
                 properties:
-                  enabled:
-                    description: Enabled indicates whether to terminate a Pod when
-                      the Node is interrupted.
-                    type: boolean
-                  gracePeriodSeconds:
-                    description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
-                    format: int64
-                    type: integer
+                  name:
+                    type: string
                 type: object
             type: object
           status:

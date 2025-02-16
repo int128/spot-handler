@@ -27,7 +27,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 )
 
 var _ = Describe("SpotInterruption Controller", func() {
@@ -73,10 +72,6 @@ var _ = Describe("SpotInterruption Controller", func() {
 					EventTimestamp:   metav1.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
 					InstanceID:       "i-00000000000000001",
 					AvailabilityZone: "us-east-2a",
-					PodTermination: spothandlerv1.PodTerminationSpec{
-						Enabled:            true,
-						GracePeriodSeconds: ptr.To(int64(1)),
-					},
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
