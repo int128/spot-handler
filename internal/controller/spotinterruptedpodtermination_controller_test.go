@@ -37,25 +37,6 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			ctx := context.TODO()
 
-			By("Creating a Queue resource")
-			queue := spothandlerv1.Queue{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-queue-",
-				},
-				Spec: spothandlerv1.QueueSpec{
-					SpotInterruption: spothandlerv1.QueueSpotInterruptionSpec{
-						PodTermination: spothandlerv1.PodTerminationSpec{
-							Enabled:            true,
-							GracePeriodSeconds: ptr.To(int64(1)),
-						},
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, &queue)).To(Succeed())
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &queue)).To(Succeed())
-			})
-
 			By("Creating a Pod resource")
 			fixturePod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -84,13 +65,10 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 					Namespace:    "default",
 				},
 				Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-					Pod:        corev1.LocalObjectReference{Name: fixturePod.Name},
-					Node:       corev1.LocalObjectReference{Name: "test-node"},
-					InstanceID: "i-1234567890abcdef0",
-					PodTermination: spothandlerv1.PodTerminationSpec{
-						Enabled:            true,
-						GracePeriodSeconds: ptr.To(int64(1)),
-					},
+					GracePeriodSeconds: ptr.To(int64(30)),
+					Pod:                corev1.LocalObjectReference{Name: fixturePod.Name},
+					Node:               corev1.LocalObjectReference{Name: "test-node"},
+					InstanceID:         "i-1234567890abcdef0",
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruptedPodTermination)).To(Succeed())

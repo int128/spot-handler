@@ -41,9 +41,12 @@ spec:
             description: SpotInterruptedPodTerminationSpec defines the desired state
               of SpotInterruptedPodTermination.
             properties:
+              gracePeriodSeconds:
+                description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                format: int64
+                type: integer
               instanceID:
-                description: InstanceID refers to the instance ID of the Node affected
-                  by SpotInterruption
+                description: InstanceID represents the instance affected by the event.
                 type: string
               node:
                 description: Node refers to the Node affected by SpotInterruption
@@ -73,18 +76,6 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              podTermination:
-                description: PodTermination is propagated from the owner object.
-                properties:
-                  enabled:
-                    description: Enabled indicates whether to terminate a Pod when
-                      the Node is interrupted.
-                    type: boolean
-                  gracePeriodSeconds:
-                    description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
-                    format: int64
-                    type: integer
-                type: object
             type: object
           status:
             description: SpotInterruptedPodTerminationStatus defines the observed

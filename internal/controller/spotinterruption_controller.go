@@ -109,9 +109,8 @@ func (r *SpotInterruptionReconciler) createSpotInterruptedNode(ctx context.Conte
 			Name: node.Name,
 		},
 		Spec: spothandlerv1.SpotInterruptedNodeSpec{
-			Node:           corev1.LocalObjectReference{Name: node.Name},
-			InstanceID:     obj.Spec.InstanceID,
-			PodTermination: obj.Spec.PodTermination,
+			Node:             corev1.LocalObjectReference{Name: node.Name},
+			SpotInterruption: spothandlerv1.SpotInterruptionReferenceTo(obj),
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedNode, r.Scheme); err != nil {

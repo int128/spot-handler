@@ -23,17 +23,18 @@ import (
 
 // SpotInterruptedPodTerminationSpec defines the desired state of SpotInterruptedPodTermination.
 type SpotInterruptedPodTerminationSpec struct {
+	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+	// +optional
+	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
+
 	// Pod refers to the Pod affected by SpotInterruption
 	Pod corev1.LocalObjectReference `json:"pod,omitempty"`
 
 	// Node refers to the Node affected by SpotInterruption
 	Node corev1.LocalObjectReference `json:"node,omitempty"`
 
-	// InstanceID refers to the instance ID of the Node affected by SpotInterruption
+	// InstanceID represents the instance affected by the event.
 	InstanceID string `json:"instanceID,omitempty"`
-
-	// PodTermination is propagated from the owner object.
-	PodTermination PodTerminationSpec `json:"podTermination,omitempty"`
 }
 
 // SpotInterruptedPodTerminationStatus defines the observed state of SpotInterruptedPodTermination.

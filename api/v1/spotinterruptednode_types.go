@@ -26,11 +26,8 @@ type SpotInterruptedNodeSpec struct {
 	// Node refers to the Node affected by SpotInterruption
 	Node corev1.LocalObjectReference `json:"node,omitempty"`
 
-	// InstanceID refers to the instance ID of the Node affected by SpotInterruption
-	InstanceID string `json:"instanceID,omitempty"`
-
-	// PodTermination is propagated from the owner object.
-	PodTermination PodTerminationSpec `json:"podTermination,omitempty"`
+	// SpotInterruption refers to the SpotInterruption event that caused the Node to be interrupted.
+	SpotInterruption SpotInterruptionReference `json:"spotInterruption,omitempty"`
 }
 
 // SpotInterruptedNodeStatus defines the observed state of SpotInterruptedNode

@@ -73,6 +73,10 @@ func (r *SpotInterruptedNodeReconciler) Reconcile(ctx context.Context, req ctrl.
 }
 
 func (r *SpotInterruptedNodeReconciler) reconcile(ctx context.Context, obj spothandlerv1.SpotInterruptedNode) error {
+	var spotInterruption spothandlerv1.SpotInterruption
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.SpotInterruption.Name}, &spotInterruption); err != nil {
+		return ctrlclient.IgnoreNotFound(err)
+	}
 	var podList corev1.PodList
 	if err := r.List(ctx, &podList, ctrlclient.MatchingFields{podNodeNameField: obj.Spec.Node.Name}); err != nil {
 		return fmt.Errorf("failed to find Pods: %w", err)
@@ -82,7 +86,7 @@ func (r *SpotInterruptedNodeReconciler) reconcile(ctx context.Context, obj spoth
 			return err
 		}
 	}
-	if err := r.createEvent(ctx, obj); err != nil {
+	if err := r.createEvent(ctx, obj, spotInterruption); err != nil {
 		return err
 	}
 	return nil
@@ -95,10 +99,9 @@ func (r *SpotInterruptedNodeReconciler) createSpotInterruptedPod(ctx context.Con
 			Namespace: pod.Namespace,
 		},
 		Spec: spothandlerv1.SpotInterruptedPodSpec{
-			Pod:            corev1.LocalObjectReference{Name: pod.Name},
-			Node:           corev1.LocalObjectReference{Name: obj.Spec.Node.Name},
-			InstanceID:     obj.Spec.InstanceID,
-			PodTermination: obj.Spec.PodTermination,
+			Pod:              corev1.LocalObjectReference{Name: pod.Name},
+			Node:             corev1.LocalObjectReference{Name: obj.Spec.Node.Name},
+			SpotInterruption: obj.Spec.SpotInterruption,
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedPod, r.Scheme); err != nil {
@@ -110,7 +113,7 @@ func (r *SpotInterruptedNodeReconciler) createSpotInterruptedPod(ctx context.Con
 	return nil
 }
 
-func (r *SpotInterruptedNodeReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedNode) error {
+func (r *SpotInterruptedNodeReconciler) createEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedNode, spotInterruption spothandlerv1.SpotInterruption) error {
 	logger := ctrllog.FromContext(ctx)
 
 	var node corev1.Node
@@ -143,7 +146,7 @@ func (r *SpotInterruptedNodeReconciler) createEvent(ctx context.Context, obj spo
 		Count:               1,
 		Type:                corev1.EventTypeWarning,
 		Reason:              "SpotInterrupted",
-		Message:             fmt.Sprintf("Node %s of %s is interrupted", obj.Spec.Node.Name, obj.Spec.InstanceID),
+		Message:             fmt.Sprintf("Node %s of %s is interrupted", obj.Spec.Node.Name, spotInterruption.Spec.InstanceID),
 	}
 	if err := r.Create(ctx, &event); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create an Event: %w", err))
