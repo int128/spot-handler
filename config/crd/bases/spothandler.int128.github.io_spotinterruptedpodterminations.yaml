@@ -76,7 +76,7 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              podTerminationTimestamp:
+              terminationTimestamp:
                 description: TerminationTimestamp is the timestamp at which the Pod
                   will be terminated.
                 format: date-time
