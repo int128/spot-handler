@@ -36,6 +36,7 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 	var fixturePod corev1.Pod
 
 	BeforeEach(func() {
+		spotInterruptedPodTerminationReconcilerClock.SetTime(fakeNow)
 		ctx := context.TODO()
 
 		By("Creating a Pod resource")
@@ -122,11 +123,12 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 			})
 
 			By("Checking if the SpotInterruptedPodTermination is reconciled")
+			spotInterruptedPodTerminationReconcilerClock.Step(1 * time.Second)
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPodTermination), &spotInterruptedPodTermination)).To(Succeed())
 				g.Expect(spotInterruptedPodTermination.Status.ReconciledAt).NotTo(BeZero())
-			}).WithTimeout(3 * time.Second).Should(Succeed())
-			Expect(spotInterruptedPodTermination.Status.ReconciledAt.UTC()).To(BeTemporally("=", fakeNow.Add(1*time.Second)))
+			}).WithTimeout(2 * time.Second).Should(Succeed())
+			Expect(spotInterruptedPodTermination.Status.ReconciledAt.UTC()).To(Equal(fakeNow.Add(1 * time.Second)))
 
 			By("Checking if the Pod is terminated")
 			Eventually(func(g Gomega) {

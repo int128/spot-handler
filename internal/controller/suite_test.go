@@ -43,6 +43,7 @@ import (
 var k8sClient ctrlclient.Client
 var mockSQSClient mockSQSClientType
 var fakeNow = time.Date(2021, 7, 1, 1, 1, 1, 0, time.UTC)
+var spotInterruptedPodTerminationReconcilerClock = ktesting.NewFakeClock(fakeNow)
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -111,7 +112,7 @@ var _ = BeforeSuite(func() {
 	Expect((&SpotInterruptedPodTerminationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		Clock:  ktesting.NewFakePassiveClock(fakeNow),
+		Clock:  spotInterruptedPodTerminationReconcilerClock,
 	}).SetupWithManager(mgr)).To(Succeed())
 
 	ctx, cancel := context.WithCancel(context.TODO())
