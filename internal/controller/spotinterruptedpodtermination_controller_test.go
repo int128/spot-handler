@@ -123,7 +123,7 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 			})
 
 			By("Checking if the SpotInterruptedPodTermination is not reconciled immediately")
-			k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPodTermination.Name, Namespace: spotInterruptedPodTermination.Namespace}, &spotInterruptedPodTermination)
+			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPodTermination.Name, Namespace: spotInterruptedPodTermination.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
 			Expect(spotInterruptedPodTermination.Status.ReconciledAt).To(BeZero())
 
 			By("Checking if the SpotInterruptedPodTermination is reconciled")
