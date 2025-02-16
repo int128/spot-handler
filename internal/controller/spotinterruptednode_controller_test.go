@@ -39,6 +39,9 @@ var _ = Describe("SpotInterruptedNode Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &fixtureNode)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &fixtureNode)).To(Succeed())
+			})
 
 			By("Creating a Pod resource")
 			fixturePod := corev1.Pod{
@@ -57,6 +60,9 @@ var _ = Describe("SpotInterruptedNode Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &fixturePod)).To(Succeed())
+			})
 
 			By("Creating a SpotInterruption resource")
 			spotInterruption := spothandlerv1.SpotInterruption{
@@ -83,6 +89,9 @@ var _ = Describe("SpotInterruptedNode Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruptedNode)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &spotInterruptedNode)).To(Succeed())
+			})
 
 			By("Checking if SpotInterruptedNode is reconciled")
 			Eventually(func(g Gomega) {
