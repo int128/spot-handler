@@ -70,21 +70,27 @@ func (r *SpotInterruptedPodReconciler) Reconcile(ctx context.Context, req ctrl.R
 }
 
 func (r *SpotInterruptedPodReconciler) reconcile(ctx context.Context, obj spothandlerv1.SpotInterruptedPod) error {
+	var spotInterruption spothandlerv1.SpotInterruption
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.SpotInterruption.Name}, &spotInterruption); err != nil {
+		return ctrlclient.IgnoreNotFound(err)
+	}
 	var pod corev1.Pod
 	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.Pod.Name, Namespace: obj.Namespace}, &pod); err != nil {
 		return ctrlclient.IgnoreNotFound(fmt.Errorf("failed to get the Pod: %w", err))
 	}
-	if err := r.createSpotInterruptedPodTermination(ctx, obj); err != nil {
+	if err := r.createSpotInterruptedPodTermination(ctx, obj, spotInterruption); err != nil {
 		return err
 	}
-	if err := r.createSpotInterruptedEvent(ctx, obj, pod); err != nil {
+	if err := r.createSpotInterruptedEvent(ctx, obj, pod, spotInterruption); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(ctx context.Context, obj spothandlerv1.SpotInterruptedPod) error {
-	if !obj.Spec.PodTermination.Enabled {
+func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(
+	ctx context.Context, obj spothandlerv1.SpotInterruptedPod, spotInterruption spothandlerv1.SpotInterruption,
+) error {
+	if !spotInterruption.Spec.PodTermination.Enabled {
 		return nil
 	}
 
@@ -94,10 +100,9 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(ctx c
 			Namespace: obj.Namespace,
 		},
 		Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-			Pod:            obj.Spec.Pod,
-			Node:           obj.Spec.Node,
-			InstanceID:     obj.Spec.InstanceID,
-			PodTermination: obj.Spec.PodTermination,
+			Pod:              obj.Spec.Pod,
+			Node:             obj.Spec.Node,
+			SpotInterruption: spothandlerv1.SpotInterruptionReferenceTo(spotInterruption),
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedPodTermination, r.Scheme); err != nil {
@@ -109,7 +114,9 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(ctx c
 	return nil
 }
 
-func (r *SpotInterruptedPodReconciler) createSpotInterruptedEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod) error {
+func (r *SpotInterruptedPodReconciler) createSpotInterruptedEvent(
+	ctx context.Context, obj spothandlerv1.SpotInterruptedPod, pod corev1.Pod, spotInterruption spothandlerv1.SpotInterruption,
+) error {
 	logger := ctrllog.FromContext(ctx)
 	ref, err := reference.GetReference(r.Scheme, &pod)
 	if err != nil {
@@ -137,7 +144,7 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedEvent(ctx context.Co
 		Count:               1,
 		Type:                corev1.EventTypeWarning,
 		Reason:              "SpotInterrupted",
-		Message:             fmt.Sprintf("Pod %s on Node %s of %s is interrupted.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID),
+		Message:             fmt.Sprintf("Pod %s on Node %s of %s is interrupted.", pod.Name, obj.Spec.Node.Name, spotInterruption.Spec.InstanceID),
 	}
 	if err := r.Create(ctx, &event); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create Event: %w", err))

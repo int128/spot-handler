@@ -71,7 +71,11 @@ func (r *SpotInterruptedPodTerminationReconciler) Reconcile(ctx context.Context,
 }
 
 func (r *SpotInterruptedPodTerminationReconciler) reconcile(ctx context.Context, obj *spothandlerv1.SpotInterruptedPodTermination) error {
-	if !obj.Spec.PodTermination.Enabled {
+	var spotInterruption spothandlerv1.SpotInterruption
+	if err := r.Get(ctx, ctrlclient.ObjectKey{Name: obj.Spec.SpotInterruption.Name}, &spotInterruption); err != nil {
+		return ctrlclient.IgnoreNotFound(err)
+	}
+	if !spotInterruption.Spec.PodTermination.Enabled {
 		return nil
 	}
 
@@ -87,32 +91,34 @@ func (r *SpotInterruptedPodTerminationReconciler) reconcile(ctx context.Context,
 	}
 
 	var deleteOpts []ctrlclient.DeleteOption
-	if obj.Spec.PodTermination.GracePeriodSeconds != nil {
-		deleteOpts = append(deleteOpts, ctrlclient.GracePeriodSeconds(*obj.Spec.PodTermination.GracePeriodSeconds))
+	if spotInterruption.Spec.PodTermination.GracePeriodSeconds != nil {
+		deleteOpts = append(deleteOpts, ctrlclient.GracePeriodSeconds(*spotInterruption.Spec.PodTermination.GracePeriodSeconds))
 	}
 	obj.Status.RequestedAt = metav1.NewTime(r.Clock.Now())
 	if err := r.Delete(ctx, &pod, deleteOpts...); err != nil {
 		obj.Status.RequestError = fmt.Sprintf("delete error: %s", err)
 	}
-	if err := r.createPodTerminatingEvent(ctx, *obj, pod); err != nil {
+	if err := r.createPodTerminatingEvent(ctx, *obj, pod, spotInterruption); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *SpotInterruptedPodTerminationReconciler) createPodTerminatingEvent(ctx context.Context, obj spothandlerv1.SpotInterruptedPodTermination, pod corev1.Pod) error {
+func (r *SpotInterruptedPodTerminationReconciler) createPodTerminatingEvent(
+	ctx context.Context, obj spothandlerv1.SpotInterruptedPodTermination, pod corev1.Pod, spotInterruption spothandlerv1.SpotInterruption,
+) error {
 	logger := ctrllog.FromContext(ctx)
 
 	var message string
 	switch {
 	case obj.Status.RequestError != "":
 		message = fmt.Sprintf("Failed to terminate the Pod %s on Node %s of %s: %s",
-			pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID, obj.Status.RequestError)
-	case obj.Spec.PodTermination.GracePeriodSeconds != nil:
+			pod.Name, obj.Spec.Node.Name, spotInterruption.Spec.InstanceID, obj.Status.RequestError)
+	case spotInterruption.Spec.PodTermination.GracePeriodSeconds != nil:
 		message = fmt.Sprintf("Pod %s on Node %s of %s is terminating with grace period %d seconds.",
-			pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID, *obj.Spec.PodTermination.GracePeriodSeconds)
+			pod.Name, obj.Spec.Node.Name, spotInterruption.Spec.InstanceID, *spotInterruption.Spec.PodTermination.GracePeriodSeconds)
 	default:
-		message = fmt.Sprintf("Pod %s on Node %s of %s is terminating.", pod.Name, obj.Spec.Node.Name, obj.Spec.InstanceID)
+		message = fmt.Sprintf("Pod %s on Node %s of %s is terminating.", pod.Name, obj.Spec.Node.Name, spotInterruption.Spec.InstanceID)
 	}
 
 	ref, err := reference.GetReference(r.Scheme, &pod)

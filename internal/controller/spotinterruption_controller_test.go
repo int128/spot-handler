@@ -93,8 +93,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixtureNode.Name}, &spotInterruptedNode)
 			}).Should(Succeed())
 			Expect(spotInterruptedNode.Spec.Node.Name).To(Equal(fixtureNode.Name))
-			Expect(spotInterruptedNode.Spec.InstanceID).To(Equal(spotInterruption.Spec.InstanceID))
-			Expect(spotInterruptedNode.Spec.PodTermination).To(Equal(spotInterruption.Spec.PodTermination))
+			Expect(spotInterruptedNode.Spec.SpotInterruption.Name).To(Equal(spotInterruption.Name))
 		})
 	})
 

@@ -65,6 +65,18 @@ type SpotInterruptionList struct {
 	Items           []SpotInterruption `json:"items"`
 }
 
+// SpotInterruptionReference represents a reference to a SpotInterruption object.
+type SpotInterruptionReference struct {
+	// Name is the name of the SpotInterruption object.
+	Name string `json:"name,omitempty"`
+}
+
+func SpotInterruptionReferenceTo(spotInterruption SpotInterruption) SpotInterruptionReference {
+	return SpotInterruptionReference{
+		Name: spotInterruption.Name,
+	}
+}
+
 func init() {
 	SchemeBuilder.Register(&SpotInterruption{}, &SpotInterruptionList{})
 }
