@@ -47,6 +47,11 @@ spec:
                     description: PodTermination defines the configuration for Pod
                       termination.
                     properties:
+                      delaySeconds:
+                        description: DelaySeconds is the delay before terminating
+                          the Pod.
+                        format: int64
+                        type: integer
                       enabled:
                         description: Enabled indicates whether to terminate a Pod
                           when the Node is interrupted.

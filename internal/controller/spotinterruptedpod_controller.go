@@ -104,10 +104,11 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(
 			Namespace: obj.Namespace,
 		},
 		Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-			GracePeriodSeconds: queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds,
-			Pod:                obj.Spec.Pod,
-			Node:               obj.Spec.Node,
-			InstanceID:         spotInterruption.Spec.InstanceID,
+			TerminationTimestamp: metav1.NewTime(spotInterruption.Spec.EventTimestamp.Add(queue.Spec.SpotInterruption.PodTermination.DelayDuration())),
+			GracePeriodSeconds:   queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds,
+			Pod:                  obj.Spec.Pod,
+			Node:                 obj.Spec.Node,
+			InstanceID:           spotInterruption.Spec.InstanceID,
 		},
 	}
 	if err := ctrl.SetControllerReference(&obj, &spotInterruptedPodTermination, r.Scheme); err != nil {

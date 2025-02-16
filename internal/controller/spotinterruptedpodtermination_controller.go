@@ -59,6 +59,14 @@ func (r *SpotInterruptedPodTerminationReconciler) Reconcile(ctx context.Context,
 		return ctrl.Result{}, nil
 	}
 
+	if obj.Spec.TerminationTimestamp.IsZero() {
+		return ctrl.Result{}, nil
+	}
+	timeUntilPodTermination := obj.Spec.TerminationTimestamp.Sub(r.Clock.Now())
+	if timeUntilPodTermination > 0 {
+		return ctrl.Result{RequeueAfter: timeUntilPodTermination}, nil
+	}
+
 	if err := r.reconcile(ctx, &obj); err != nil {
 		return ctrl.Result{}, err
 	}
