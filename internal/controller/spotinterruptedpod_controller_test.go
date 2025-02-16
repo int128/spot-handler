@@ -31,29 +31,35 @@ import (
 )
 
 var _ = Describe("SpotInterruptedPod Controller", func() {
+	var fixturePod corev1.Pod
+
+	BeforeEach(func() {
+		ctx := context.TODO()
+
+		By("Creating a Pod resource")
+		fixturePod = corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "test-pod-",
+				Namespace:    "default",
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "test-container",
+						Image: "test-image",
+					},
+				},
+			},
+		}
+		Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
+		DeferCleanup(func() {
+			Expect(ctrlclient.IgnoreNotFound(k8sClient.Delete(ctx, &fixturePod))).To(Succeed())
+		})
+	})
+
 	Context("When reconciling a resource", func() {
 		It("should successfully reconcile the resource", func() {
 			ctx := context.TODO()
-
-			By("Creating a Pod resource")
-			fixturePod := corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-pod-",
-					Namespace:    "default",
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "test-container",
-							Image: "test-image",
-						},
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
-			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &fixturePod)).To(Succeed())
-			})
 
 			By("Creating a Queue object")
 			queue := spothandlerv1.Queue{
@@ -117,27 +123,6 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 	Context("When pod termination is enabled", func() {
 		It("should terminate the Pod", func() {
 			ctx := context.TODO()
-
-			By("Creating a Pod resource")
-			fixturePod := corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-pod-",
-					Namespace:    "default",
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "test-container",
-							Image: "test-image",
-						},
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
-			DeferCleanup(func() {
-				// Pod will be deleted by the controller in the test
-				Expect(ctrlclient.IgnoreNotFound(k8sClient.Delete(ctx, &fixturePod))).To(Succeed())
-			})
 
 			By("Creating a Queue object")
 			queue := spothandlerv1.Queue{
