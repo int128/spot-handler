@@ -18,5 +18,5 @@ spec:
       delaySeconds: 30
 
       # GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
-      # No override by default.
+      # Do not override by default.
       gracePeriodSeconds: 30

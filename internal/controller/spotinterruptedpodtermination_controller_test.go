@@ -27,7 +27,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
@@ -86,7 +85,7 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 
 			By("Checking if the SpotInterruptedPodTermination is reconciled")
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPodTermination.Name, Namespace: spotInterruptedPodTermination.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPodTermination), &spotInterruptedPodTermination)).To(Succeed())
 				g.Expect(spotInterruptedPodTermination.Status.ReconciledAt).NotTo(BeZero())
 			}).Should(Succeed())
 
@@ -131,7 +130,7 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 
 			By("Checking if the Pod is terminated")
 			Eventually(func(g Gomega) {
-				err := k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &fixturePod)
+				err := k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&fixturePod), &fixturePod)
 				g.Expect(err).To(HaveOccurred())
 				g.Expect(kerrors.IsNotFound(err)).To(BeTrue())
 			}).Should(Succeed())

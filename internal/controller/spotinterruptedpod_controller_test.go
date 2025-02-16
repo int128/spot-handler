@@ -26,7 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -71,7 +70,6 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, &queue)).To(Succeed())
 			DeferCleanup(func() {
-				By("Deleting the Queue object")
 				Expect(k8sClient.Delete(ctx, &queue)).To(Succeed())
 			})
 
@@ -109,13 +107,13 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 
 			By("Checking if the SpotInterruptedPod is reconciled")
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPod)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPod), &spotInterruptedPod)).To(Succeed())
 				g.Expect(spotInterruptedPod.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 
 			By("Checking if the SpotInterruptedPodTermination is not created")
 			var spotInterruptedPodTermination spothandlerv1.SpotInterruptedPodTermination
-			err := k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPodTermination)
+			err := k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPod), &spotInterruptedPodTermination)
 			Expect(err).To(HaveOccurred())
 			Expect(kerrors.IsNotFound(err)).To(BeTrue())
 		})
@@ -142,7 +140,6 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			}
 			Expect(k8sClient.Create(ctx, &queue)).To(Succeed())
 			DeferCleanup(func() {
-				By("Deleting the Queue object")
 				Expect(k8sClient.Delete(ctx, &queue)).To(Succeed())
 			})
 
@@ -182,13 +179,13 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 
 			By("Checking if the SpotInterruptedPod is reconciled")
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPod)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPod), &spotInterruptedPod)).To(Succeed())
 				g.Expect(spotInterruptedPod.Status.ReconciledAt).NotTo(BeZero())
 			}).Should(Succeed())
 
 			By("Checking if the SpotInterruptedPodTermination is created")
 			var spotInterruptedPodTermination spothandlerv1.SpotInterruptedPodTermination
-			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPod.Name, Namespace: spotInterruptedPod.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
+			Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPod), &spotInterruptedPodTermination)).To(Succeed())
 			Expect(spotInterruptedPodTermination.Spec).To(Equal(spothandlerv1.SpotInterruptedPodTerminationSpec{
 				TerminationTimestamp: metav1.NewTime(spotInterruptionEventTimestamp.Add(30 * time.Second).Local()),
 				GracePeriodSeconds:   ptr.To(int64(1)),
