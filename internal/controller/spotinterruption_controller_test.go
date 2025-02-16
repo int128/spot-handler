@@ -27,6 +27,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ktypes "k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("SpotInterruption Controller", func() {
@@ -44,6 +45,9 @@ var _ = Describe("SpotInterruption Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &fixtureNode)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &fixtureNode)).To(Succeed())
+			})
 
 			By("Creating a Pod resource")
 			fixturePod := corev1.Pod{
@@ -62,6 +66,9 @@ var _ = Describe("SpotInterruption Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &fixturePod)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &fixturePod)).To(Succeed())
+			})
 
 			By("Creating a SpotInterruption resource")
 			spotInterruption := spothandlerv1.SpotInterruption{
@@ -75,6 +82,9 @@ var _ = Describe("SpotInterruption Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &spotInterruption)).To(Succeed())
+			})
 
 			By("Checking if SpotInterruption is reconciled")
 			Eventually(func(g Gomega) {
@@ -108,6 +118,10 @@ var _ = Describe("SpotInterruption Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
+			DeferCleanup(func() {
+				// SpotInterruption will be deleted by the controller in the test
+				Expect(ctrlclient.IgnoreNotFound(k8sClient.Delete(ctx, &spotInterruption))).To(Succeed())
+			})
 
 			By("Waiting for the first reconciliation")
 			Eventually(func(g Gomega) {

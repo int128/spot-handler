@@ -170,6 +170,9 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &spotInterruption)).To(Succeed())
+			})
 
 			By("Creating a SpotInterruptedPod resource")
 			spotInterruptedPod := spothandlerv1.SpotInterruptedPod{
