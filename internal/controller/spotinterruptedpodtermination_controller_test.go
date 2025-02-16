@@ -110,7 +110,7 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 					Namespace:    "default",
 				},
 				Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-					TerminationTimestamp: metav1.NewTime(fakeNow.Add(100 * time.Microsecond)),
+					TerminationTimestamp: metav1.NewTime(fakeNow.Add(1 * time.Second)),
 					GracePeriodSeconds:   ptr.To(int64(30)),
 					Pod:                  corev1.LocalObjectReference{Name: fixturePod.Name},
 					Node:                 corev1.LocalObjectReference{Name: "test-node"},
@@ -122,15 +122,12 @@ var _ = Describe("SpotInterruptedPodTermination Controller", func() {
 				Expect(k8sClient.Delete(ctx, &spotInterruptedPodTermination)).To(Succeed())
 			})
 
-			By("Checking if the SpotInterruptedPodTermination is not reconciled immediately")
-			Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPodTermination.Name, Namespace: spotInterruptedPodTermination.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
-			Expect(spotInterruptedPodTermination.Status.ReconciledAt).To(BeZero())
-
 			By("Checking if the SpotInterruptedPodTermination is reconciled")
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedPodTermination.Name, Namespace: spotInterruptedPodTermination.Namespace}, &spotInterruptedPodTermination)).To(Succeed())
 				g.Expect(spotInterruptedPodTermination.Status.ReconciledAt).NotTo(BeZero())
-			}).Should(Succeed())
+			}).WithTimeout(3 * time.Second).Should(Succeed())
+			Expect(spotInterruptedPodTermination.Status.ReconciledAt.UTC()).To(BeTemporally("=", fakeNow.Add(1*time.Second)))
 
 			By("Checking if the Pod is terminated")
 			Eventually(func(g Gomega) {

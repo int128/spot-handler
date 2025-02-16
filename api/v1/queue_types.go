@@ -44,10 +44,12 @@ type QueuePodTerminationSpec struct {
 	Enabled bool `json:"enabled,omitempty"`
 
 	// DelaySeconds is the delay before terminating the Pod.
+	// The default is 0 (immediately).
 	// +optional
 	DelaySeconds int64 `json:"delaySeconds,omitempty"`
 
 	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+	// No override by default.
 	// +optional
 	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
 }

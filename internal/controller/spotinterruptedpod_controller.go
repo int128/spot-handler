@@ -98,13 +98,14 @@ func (r *SpotInterruptedPodReconciler) createSpotInterruptedPodTermination(
 		return nil
 	}
 
+	terminationTimestamp := spotInterruption.Spec.EventTimestamp.Add(queue.Spec.SpotInterruption.PodTermination.DelayDuration())
 	spotInterruptedPodTermination := spothandlerv1.SpotInterruptedPodTermination{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      obj.Name,
 			Namespace: obj.Namespace,
 		},
 		Spec: spothandlerv1.SpotInterruptedPodTerminationSpec{
-			TerminationTimestamp: metav1.NewTime(spotInterruption.Spec.EventTimestamp.Add(queue.Spec.SpotInterruption.PodTermination.DelayDuration())),
+			TerminationTimestamp: metav1.NewTime(terminationTimestamp),
 			GracePeriodSeconds:   queue.Spec.SpotInterruption.PodTermination.GracePeriodSeconds,
 			Pod:                  obj.Spec.Pod,
 			Node:                 obj.Spec.Node,

@@ -64,6 +64,7 @@ func (r *SpotInterruptedPodTerminationReconciler) Reconcile(ctx context.Context,
 	}
 	timeUntilPodTermination := obj.Spec.TerminationTimestamp.Sub(r.Clock.Now())
 	if timeUntilPodTermination > 0 {
+		logger.Info("Requeue after the termination timestamp", "timeUntilPodTermination", timeUntilPodTermination, "terminationTimestamp", obj.Spec.TerminationTimestamp)
 		return ctrl.Result{RequeueAfter: timeUntilPodTermination}, nil
 	}
 

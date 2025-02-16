@@ -48,8 +48,9 @@ spec:
                       termination.
                     properties:
                       delaySeconds:
-                        description: DelaySeconds is the delay before terminating
-                          the Pod.
+                        description: |-
+                          DelaySeconds is the delay before terminating the Pod.
+                          The default is 0 (immediately).
                         format: int64
                         type: integer
                       enabled:
@@ -57,7 +58,9 @@ spec:
                           when the Node is interrupted.
                         type: boolean
                       gracePeriodSeconds:
-                        description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                        description: |-
+                          GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                          No override by default.
                         format: int64
                         type: integer
                     type: object
