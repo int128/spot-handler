@@ -47,12 +47,20 @@ spec:
                     description: PodTermination defines the configuration for Pod
                       termination.
                     properties:
+                      delaySeconds:
+                        description: |-
+                          DelaySeconds is the delay before terminating the Pod.
+                          The default is 0 (immediately).
+                        format: int64
+                        type: integer
                       enabled:
                         description: Enabled indicates whether to terminate a Pod
                           when the Node is interrupted.
                         type: boolean
                       gracePeriodSeconds:
-                        description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                        description: |-
+                          GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+                          No override by default.
                         format: int64
                         type: integer
                     type: object

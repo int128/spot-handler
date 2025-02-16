@@ -13,6 +13,10 @@ spec:
       # Default is false.
       enabled: true
 
+      # DelaySeconds is the delay before terminating the Pod.
+      # The default is 0 (immediately).
+      delaySeconds: 30
+
       # GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
       # Do not override by default.
       gracePeriodSeconds: 30

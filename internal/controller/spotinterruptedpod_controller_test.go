@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	spothandlerv1 "github.com/int128/spot-handler/api/v1"
 	. "github.com/onsi/ginkgo/v2"
@@ -131,6 +132,7 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 					SpotInterruption: spothandlerv1.QueueSpotInterruptionSpec{
 						PodTermination: spothandlerv1.QueuePodTerminationSpec{
 							Enabled:            true,
+							DelaySeconds:       30,
 							GracePeriodSeconds: ptr.To(int64(1)),
 						},
 					},
@@ -142,13 +144,15 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			})
 
 			By("Creating a SpotInterruption resource")
+			spotInterruptionEventTimestamp := metav1.Date(2021, 7, 2, 3, 4, 5, 0, time.UTC)
 			spotInterruption := spothandlerv1.SpotInterruption{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: "test-spotinterruption-",
 				},
 				Spec: spothandlerv1.SpotInterruptionSpec{
-					InstanceID: "i-1234567890abcdef0",
-					Queue:      spothandlerv1.QueueReferenceTo(queue),
+					EventTimestamp: spotInterruptionEventTimestamp,
+					InstanceID:     "i-1234567890abcdef0",
+					Queue:          spothandlerv1.QueueReferenceTo(queue),
 				},
 			}
 			Expect(k8sClient.Create(ctx, &spotInterruption)).To(Succeed())
@@ -183,10 +187,11 @@ var _ = Describe("SpotInterruptedPod Controller", func() {
 			var spotInterruptedPodTermination spothandlerv1.SpotInterruptedPodTermination
 			Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedPod), &spotInterruptedPodTermination)).To(Succeed())
 			Expect(spotInterruptedPodTermination.Spec).To(Equal(spothandlerv1.SpotInterruptedPodTerminationSpec{
-				GracePeriodSeconds: ptr.To(int64(1)),
-				Pod:                corev1.LocalObjectReference{Name: fixturePod.Name},
-				Node:               corev1.LocalObjectReference{Name: "test-node"},
-				InstanceID:         "i-1234567890abcdef0",
+				TerminationTimestamp: metav1.NewTime(spotInterruptionEventTimestamp.Add(30 * time.Second).Local()),
+				GracePeriodSeconds:   ptr.To(int64(1)),
+				Pod:                  corev1.LocalObjectReference{Name: fixturePod.Name},
+				Node:                 corev1.LocalObjectReference{Name: "test-node"},
+				InstanceID:           "i-1234567890abcdef0",
 			}))
 		})
 	})

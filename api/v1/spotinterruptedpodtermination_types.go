@@ -23,6 +23,9 @@ import (
 
 // SpotInterruptedPodTerminationSpec defines the desired state of SpotInterruptedPodTermination.
 type SpotInterruptedPodTerminationSpec struct {
+	// TerminationTimestamp is the timestamp at which the Pod will be terminated.
+	TerminationTimestamp metav1.Time `json:"terminationTimestamp,omitempty"`
+
 	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
 	// +optional
 	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`

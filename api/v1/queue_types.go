@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,9 +43,20 @@ type QueuePodTerminationSpec struct {
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 
+	// DelaySeconds is the delay before terminating the Pod.
+	// The default is 0 (immediately).
+	// +optional
+	DelaySeconds int64 `json:"delaySeconds,omitempty"`
+
 	// GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
+	// No override by default.
 	// +optional
 	GracePeriodSeconds *int64 `json:"gracePeriodSeconds,omitempty"`
+}
+
+// DelayDuration returns the time.Duration of DelaySeconds.
+func (spec QueuePodTerminationSpec) DelayDuration() time.Duration {
+	return time.Duration(spec.DelaySeconds) * time.Second
 }
 
 // QueueStatus defines the observed state of Queue
