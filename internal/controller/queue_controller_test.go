@@ -93,10 +93,12 @@ var _ = Describe("Queue Controller", func() {
 				Expect(k8sClient.Delete(ctx, &spotInterruption1)).To(Succeed())
 			})
 
-			Expect(spotInterruption1.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
-			Expect(spotInterruption1.Spec.InstanceID).To(Equal("i-00000000000000001"))
-			Expect(spotInterruption1.Spec.AvailabilityZone).To(Equal("us-east-2a"))
-			Expect(spotInterruption1.Spec.Queue.Name).To(Equal(queue.Name))
+			Expect(spotInterruption1.Spec).To(Equal(spothandlerv1.SpotInterruptionSpec{
+				EventTimestamp:   metav1.NewTime(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC).Local()),
+				InstanceID:       "i-00000000000000001",
+				AvailabilityZone: "us-east-2a",
+				Queue:            spothandlerv1.QueueReferenceTo(queue),
+			}))
 
 			By("Checking if SpotInterruption#2 is created")
 			var spotInterruption2 spothandlerv1.SpotInterruption
@@ -107,10 +109,12 @@ var _ = Describe("Queue Controller", func() {
 				Expect(k8sClient.Delete(ctx, &spotInterruption2)).To(Succeed())
 			})
 
-			Expect(spotInterruption2.Spec.EventTimestamp.UTC()).To(Equal(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC)))
-			Expect(spotInterruption2.Spec.InstanceID).To(Equal("i-00000000000000002"))
-			Expect(spotInterruption2.Spec.AvailabilityZone).To(Equal("us-east-2b"))
-			Expect(spotInterruption2.Spec.Queue.Name).To(Equal(queue.Name))
+			Expect(spotInterruption2.Spec).To(Equal(spothandlerv1.SpotInterruptionSpec{
+				EventTimestamp:   metav1.NewTime(time.Date(2021, 2, 3, 14, 5, 6, 0, time.UTC).Local()),
+				InstanceID:       "i-00000000000000002",
+				AvailabilityZone: "us-east-2b",
+				Queue:            spothandlerv1.QueueReferenceTo(queue),
+			}))
 
 			By("Checking if the queue becomes empty")
 			Expect(mockSQSClient.messages).To(BeEmpty())

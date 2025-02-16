@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ktypes "k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("SpotInterruptedNode Controller", func() {
@@ -95,15 +95,14 @@ var _ = Describe("SpotInterruptedNode Controller", func() {
 
 			By("Checking if SpotInterruptedNode is reconciled")
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruptedNode.Name}, &spotInterruptedNode)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruptedNode), &spotInterruptedNode)).To(Succeed())
 				g.Expect(spotInterruptedNode.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
-			})
+			}).Should(Succeed())
 
 			By("Checking if SpotInterruptedPod is created")
 			var spotInterruptedPod spothandlerv1.SpotInterruptedPod
 			Eventually(func() error {
-				return k8sClient.Get(ctx,
-					ktypes.NamespacedName{Name: fixturePod.Name, Namespace: fixturePod.Namespace}, &spotInterruptedPod)
+				return k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&fixturePod), &spotInterruptedPod)
 			}).Should(Succeed())
 			Expect(spotInterruptedPod.Spec.Node.Name).To(Equal(fixtureNode.Name))
 			Expect(spotInterruptedPod.Spec.SpotInterruption.Name).To(Equal(spotInterruption.Name))

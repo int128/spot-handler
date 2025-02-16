@@ -26,7 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ktypes "k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -88,14 +87,14 @@ var _ = Describe("SpotInterruption Controller", func() {
 
 			By("Checking if SpotInterruption is reconciled")
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruption), &spotInterruption)).To(Succeed())
 				g.Expect(spotInterruption.Status.ReconciledAt.UTC()).To(Equal(fakeNow))
 			}).Should(Succeed())
 
 			By("Checking if SpotInterruptedNode is created")
 			var spotInterruptedNode spothandlerv1.SpotInterruptedNode
 			Eventually(func() error {
-				return k8sClient.Get(ctx, ktypes.NamespacedName{Name: fixtureNode.Name}, &spotInterruptedNode)
+				return k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&fixtureNode), &spotInterruptedNode)
 			}).Should(Succeed())
 			Expect(spotInterruptedNode.Spec.Node.Name).To(Equal(fixtureNode.Name))
 			Expect(spotInterruptedNode.Spec.SpotInterruption.Name).To(Equal(spotInterruption.Name))
@@ -125,7 +124,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 
 			By("Waiting for the first reconciliation")
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruption), &spotInterruption)).To(Succeed())
 				g.Expect(spotInterruption.Status.ReconciledAt).ShouldNot(BeZero())
 			}).Should(Succeed())
 
@@ -135,7 +134,7 @@ var _ = Describe("SpotInterruption Controller", func() {
 
 			By("Checking if the resource is deleted")
 			Eventually(func(g Gomega) {
-				err := k8sClient.Get(ctx, ktypes.NamespacedName{Name: spotInterruption.Name}, &spotInterruption)
+				err := k8sClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&spotInterruption), &spotInterruption)
 				g.Expect(err).To(HaveOccurred())
 				g.Expect(kerrors.IsNotFound(err)).To(BeTrue())
 			}).Should(Succeed())
