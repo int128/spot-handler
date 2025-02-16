@@ -71,6 +71,7 @@ type SpotInterruptionReference struct {
 	Name string `json:"name,omitempty"`
 }
 
+// SpotInterruptionReferenceTo returns a reference to the given SpotInterruption object.
 func SpotInterruptionReferenceTo(spotInterruption SpotInterruption) SpotInterruptionReference {
 	return SpotInterruptionReference{
 		Name: spotInterruption.Name,
