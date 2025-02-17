@@ -32,7 +32,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image-uri: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+      image-uri: ghcr.io/${{ github.repository }}:${{ github.ref_name }}@${{ steps.build.outputs.digest }}
     steps:
       - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
@@ -60,6 +60,14 @@ jobs:
           platforms: |
             linux/amd64
             linux/arm64
+
+  release:
+    needs: build
+    uses: int128/kubebuilder-workflows/.github/workflows/release.yaml@4587f3945e2c3de18805dd46351e1ed1f2640604 # v1.4.1
+    permissions:
+      contents: write
+    with:
+      controller-image: ${{ needs.build.outputs.image-uri }}
 
   e2e-test:
     runs-on: ubuntu-latest
