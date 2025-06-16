@@ -63,7 +63,7 @@ func (r *SpotInterruptionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if !obj.Status.ReconciledAt.IsZero() {
 		expiry := obj.Status.ReconciledAt.Add(spotInterruptionRetentionPeriod)
 		if r.Clock.Now().After(expiry) {
-			if err := r.Client.Delete(ctx, &obj); err != nil {
+			if err := r.Delete(ctx, &obj); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to delete an expired SpotInterruption: %w", err)
 			}
 			logger.Info("Deleted an expired SpotInterruption", "reconciledAt", obj.Status.ReconciledAt.Format(time.RFC3339))
