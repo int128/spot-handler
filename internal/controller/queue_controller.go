@@ -125,7 +125,7 @@ func (r *QueueReconciler) createSpotInterruption(ctx context.Context, obj spotha
 	if err := ctrl.SetControllerReference(&obj, &spotInterruption, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set the controller reference from Queue to SpotInterruption: %w", err)
 	}
-	if err := r.Client.Create(ctx, &spotInterruption); err != nil {
+	if err := r.Create(ctx, &spotInterruption); err != nil {
 		return ctrlclient.IgnoreAlreadyExists(fmt.Errorf("failed to create a SpotInterruption: %w", err))
 	}
 	return nil
