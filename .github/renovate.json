@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>int128/renovate-base",
+    "github>int128/go-renovate-config#v1.8.0",
+    "github>int128/go-renovate-config:kubebuilder#v1.7.2",
+    "github>int128/go-renovate-config:github-releases#v1.8.0(README.md)",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "customManagers": [
+    {
+      "description": "Update go.mod with Dockerfile",
+      "customType": "regex",
+      "managerFilePatterns": ["go.mod"],
+      "matchStrings": ["go\\s+(?<currentValue>[\\d\\.]+)"],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "golang"
+    }
+  ]
+}
