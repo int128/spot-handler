@@ -1,6 +1,6 @@
 module github.com/int128/spot-handler
 
-go 1.25.2
+go 1.25.3
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.39.6
