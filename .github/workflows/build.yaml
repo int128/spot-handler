@@ -42,7 +42,7 @@ jobs:
     outputs:
       image-uri: ${{ steps.build-metadata.outputs.image-uri }}
     steps:
-      - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+      - uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}
@@ -50,13 +50,13 @@ jobs:
         id: cache
         with:
           image: ghcr.io/${{ github.repository }}/cache
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+      - uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         id: build
         with:
           push: true
@@ -99,13 +99,13 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - run: make -C e2e_test cluster
 
-      - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+      - uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}
           # Retrieve single tag
           flavor: latest=false
-      - uses: int128/wait-for-docker-image-action@c4dbff9e4bb00c755dd3201b95982ab3f6a2dd7e # v1.17.0
+      - uses: int128/wait-for-docker-image-action@51e41cd42742b59740d0537cf2cc5a46c3aafc4f # v1.18.0
         with:
           tags: ${{ steps.metadata.outputs.tags }}
 
