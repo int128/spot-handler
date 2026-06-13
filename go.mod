@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.43.2
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/ginkgo/v2 v2.29.0
-	github.com/onsi/gomega v1.40.0
+	github.com/onsi/gomega v1.41.0
 	k8s.io/api v0.35.4
 	k8s.io/apimachinery v0.35.4
 	k8s.io/client-go v0.35.4
