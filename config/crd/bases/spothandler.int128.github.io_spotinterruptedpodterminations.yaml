@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: spotinterruptedpodterminations.spothandler.int128.github.io
 spec:
   group: spothandler.int128.github.io
@@ -38,8 +38,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: SpotInterruptedPodTerminationSpec defines the desired state
-              of SpotInterruptedPodTermination.
+            description: spec defines the desired state of SpotInterruptedPodTermination
             properties:
               gracePeriodSeconds:
                 description: GracePeriodSeconds overrides the Pod terminationGracePeriodSeconds.
@@ -83,8 +82,7 @@ spec:
                 type: string
             type: object
           status:
-            description: SpotInterruptedPodTerminationStatus defines the observed
-              state of SpotInterruptedPodTermination.
+            description: status defines the observed state of SpotInterruptedPodTermination
             properties:
               reconciledAt:
                 description: Timestamp at which the SpotInterruptedPodTermination
@@ -101,6 +99,8 @@ spec:
                 format: date-time
                 type: string
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
