@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: spotinterruptions.spothandler.int128.github.io
 spec:
   group: spothandler.int128.github.io
@@ -37,9 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: |-
-              SpotInterruptionSpec represents an EC2 Spot Instance Interruption Warning event.
-              See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-instance-termination-notices.html for details.
+            description: spec defines the desired state of SpotInterruption
             properties:
               availabilityZone:
                 description: AvailabilityZone represents the availability zone in
@@ -61,7 +59,7 @@ spec:
                 type: object
             type: object
           status:
-            description: SpotInterruptionStatus defines the observed state of SpotInterruption
+            description: status defines the observed state of SpotInterruption
             properties:
               reconciledAt:
                 description: Timestamp at which the SpotInterruption was reconciled
@@ -69,6 +67,8 @@ spec:
                 format: date-time
                 type: string
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
