@@ -1,0 +1,74 @@
+apiVersion: rbac.authorization.k8s.io/v1
+{{- if .Values.rbac.namespaced }}
+kind: Role
+{{- else }}
+kind: ClusterRole
+{{- end }}
+metadata:
+{{- if .Values.rbac.namespaced }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+  name: {{ include "spot-handler.resourceName" (dict "suffix" "manager-role" "context" $) }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - queues
+  - spotinterruptednodes
+  - spotinterruptedpods
+  - spotinterruptedpodterminations
+  - spotinterruptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - queues/finalizers
+  - spotinterruptednodes/finalizers
+  - spotinterruptedpods/finalizers
+  - spotinterruptedpodterminations/finalizers
+  - spotinterruptions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - spothandler.int128.github.io
+  resources:
+  - queues/status
+  - spotinterruptednodes/status
+  - spotinterruptedpods/status
+  - spotinterruptedpodterminations/status
+  - spotinterruptions/status
+  verbs:
+  - get
+  - patch
+  - update
